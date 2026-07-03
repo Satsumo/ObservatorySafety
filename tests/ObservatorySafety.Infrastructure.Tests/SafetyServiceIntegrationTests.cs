@@ -51,9 +51,9 @@ public class SafetyServiceIntegrationTests
     File.WriteAllText(_flagFile, "out");
     await Task.Delay(1500);
 
-    Assert.Equals(1, nina.StopCount);
-    Assert.Equals(1, nina.ParkCount);
-    Assert.Equals(1, nina.WarmCount);
-    Assert.Equals(1, nina.CloseCount);
+    Assert.That(1, Is.EqualTo(nina.StopCount));
+    Assert.That(1, Is.EqualTo(nina.ParkCount));
+    Assert.That(1, Is.EqualTo(nina.WarmCount));
+    Assert.That(1, Is.EqualTo(nina.CloseCount));
   }
 }

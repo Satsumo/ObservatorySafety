@@ -57,6 +57,6 @@ public class PowerLossDebouncerTests
     debouncer.OnStatusChanged(new PowerStatus(false, true));
     await Task.Delay(150);
 
-    Assert.Equals(2, count);
+    Assert.That(2, Is.EqualTo(count));
   }
 }
