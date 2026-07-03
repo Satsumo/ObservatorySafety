@@ -13,20 +13,23 @@ public class SafetyService : BackgroundService
   private readonly PowerLossDebouncer _debouncer;
   private readonly ShutdownOrchestrator _orchestrator;
   private readonly INinaClient _nina;
-  private readonly Serilog.ILogger _log;
+  private readonly ILogger _log;
+  private readonly bool _simulatePowerLoss;
 
   public SafetyService(
       StatusFileWatcher watcher,
       PowerLossDebouncer debouncer,
       ShutdownOrchestrator orchestrator,
       INinaClient nina,
-      Serilog.ILogger log)
+      ILogger log,
+      bool simulatePowerLoss)
   {
     _watcher = watcher;
     _debouncer = debouncer;
     _orchestrator = orchestrator;
     _nina = nina;
     _log = log;
+    _simulatePowerLoss = simulatePowerLoss;
 
     _watcher.StatusChanged += (_, status) =>
     {
@@ -41,14 +44,23 @@ public class SafetyService : BackgroundService
       if (cmd != null)
       {
         _log.Information("Executing shutdown command: {@Command}", cmd);
-        await _orchestrator.ExecuteAsync(cmd, _nina);
+        await _nina.ExecuteShutdownAsync(cmd);
       }
     };
   }
 
-  protected override Task ExecuteAsync(CancellationToken stoppingToken)
+  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
-    _log.Information("Observatory Safety Service started.");
-    return Task.CompletedTask;
+    _log.Information("SafetyService started.");
+
+    if (_simulatePowerLoss)
+    {
+      _log.Warning("Simulated power loss triggered.");
+      var cmd = _orchestrator.GetCommandFor(new PowerStatus(false, true));
+      if (cmd != null)
+        await _nina.ExecuteShutdownAsync(cmd);
+    }
+
+    await Task.CompletedTask;
   }
 }
