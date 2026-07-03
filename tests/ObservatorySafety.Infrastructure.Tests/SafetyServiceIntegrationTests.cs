@@ -1,4 +1,7 @@
-﻿using NUnit.Framework;
+﻿using Moq;
+
+using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 using ObservatorySafety.Core;
 using ObservatorySafety.Core.Tests;
@@ -42,7 +45,7 @@ public class SafetyServiceIntegrationTests
     var watcher = new StatusFileWatcher(safetyOpts);
     var debouncer = new PowerLossDebouncer(TimeSpan.FromSeconds(1));
     var orchestrator = new ShutdownOrchestrator();
-    var nina = new TestNinaClient();
+    var nina = new MockNinaClient();
     var log = new LoggerConfiguration().MinimumLevel.Debug().CreateLogger();
 
     var service = new SafetyService(watcher, debouncer, orchestrator, nina, log, true);
@@ -55,5 +58,9 @@ public class SafetyServiceIntegrationTests
     Assert.That(1, Is.EqualTo(nina.ParkCount));
     Assert.That(1, Is.EqualTo(nina.WarmCount));
     Assert.That(1, Is.EqualTo(nina.CloseCount));
+
+    Assert.That( nina.CallLog,
+                 Is.EqualTo(new[] { "StopSequence", "ParkMount", "WarmCamera", "CloseDome" }).AsCollection
+);
   }
 }
