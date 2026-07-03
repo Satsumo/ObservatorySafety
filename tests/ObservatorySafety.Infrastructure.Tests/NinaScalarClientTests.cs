@@ -1,0 +1,40 @@
+﻿using NUnit.Framework;
+using NUnit.Framework.Legacy;
+
+using ObservatorySafety.Infrastructure;
+
+namespace ObservatorySafety.Infrastructure.Tests;
+
+[TestFixture]
+public class NinaScalarClientTests
+{
+  [Test]
+  public async Task CallsCorrectEndpoints_ForShutdown()
+  {
+    var handler = new MockHttpMessageHandler();
+    var options = new NinaOptions { BaseUrl = "http://localhost:1888" };
+    var client = new NinaScalarClient(options, handler);
+
+    await client.StopSequenceAsync();
+    await client.ParkMountAsync();
+    await client.WarmCameraAsync();
+    await client.CloseDomeAsync();
+
+    var paths = handler.Requests.Select(r => r.RequestUri!.AbsolutePath).ToList();
+
+    CollectionAssert.Contains(paths, "/api/v1/sequences/stop");
+    CollectionAssert.Contains(paths, "/api/v1/mount/park");
+    CollectionAssert.Contains(paths, "/api/v1/camera/warm");
+    CollectionAssert.Contains(paths, "/api/v1/dome/close");
+  }
+
+  [Test]
+  public void ThrowsOnNonSuccessStatusCode()
+  {
+    var handler = new MockHttpMessageHandler { ResponseStatusCode = System.Net.HttpStatusCode.BadRequest };
+    var options = new NinaOptions { BaseUrl = "http://localhost:1888" };
+    var client = new NinaScalarClient(options, handler);
+
+    Assert.ThrowsAsync<HttpRequestException>(() => client.StopSequenceAsync());
+  }
+}
