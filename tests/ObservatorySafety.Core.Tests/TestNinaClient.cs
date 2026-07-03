@@ -9,10 +9,18 @@ public class TestNinaClient : INinaClient
   public int ParkCount { get; private set; }
   public int WarmCount { get; private set; }
   public int CloseCount { get; private set; }
+  public int ShutdownCount { get; private set; }
 
   public Task AbortSequenceAsync() { AbortCount++; return Task.CompletedTask; }
   public Task StopSequenceAsync() { StopCount++; return Task.CompletedTask; }
   public Task ParkMountAsync() { ParkCount++; return Task.CompletedTask; }
   public Task WarmCameraAsync() { WarmCount++; return Task.CompletedTask; }
   public Task CloseDomeAsync() { CloseCount++; return Task.CompletedTask; }
+  public Task ExecuteShutdownAsync(ShutdownCommand shutdownCommand) {
+    if (shutdownCommand.StopSequence) StopCount++;  
+    if (shutdownCommand.ParkMount) ParkCount++;
+    if (shutdownCommand.WarmCamera) WarmCount++;
+    if (shutdownCommand.CloseDome) CloseCount++;
+    return Task.CompletedTask;
+  }
 }

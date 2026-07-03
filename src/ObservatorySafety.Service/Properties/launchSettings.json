@@ -1,12 +1,13 @@
-﻿{
-  "$schema": "https://json.schemastore.org/launchsettings.json",
+{
   "profiles": {
     "ObservatorySafety.Service": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
+      "commandLineArgs": "--console --dry-run",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
-      }
+      },
+      "dotnetRunMessages": true
     }
-  }
+  },
+  "$schema": "https://json.schemastore.org/launchsettings.json"
 }

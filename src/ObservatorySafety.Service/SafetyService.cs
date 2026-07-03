@@ -1,9 +1,6 @@
-using Microsoft.Extensions.Hosting;
-
 using ObservatorySafety.Core;
 using ObservatorySafety.Infrastructure;
 
-using Serilog;
 
 namespace ObservatorySafety.Service;
 
@@ -13,7 +10,7 @@ public class SafetyService : BackgroundService
   private readonly PowerLossDebouncer _debouncer;
   private readonly ShutdownOrchestrator _orchestrator;
   private readonly INinaClient _nina;
-  private readonly ILogger _log;
+  private readonly Serilog.ILogger _log;
   private readonly bool _simulatePowerLoss;
 
   public SafetyService(
@@ -21,7 +18,7 @@ public class SafetyService : BackgroundService
       PowerLossDebouncer debouncer,
       ShutdownOrchestrator orchestrator,
       INinaClient nina,
-      ILogger log,
+      Serilog.ILogger log,
       bool simulatePowerLoss)
   {
     _watcher = watcher;

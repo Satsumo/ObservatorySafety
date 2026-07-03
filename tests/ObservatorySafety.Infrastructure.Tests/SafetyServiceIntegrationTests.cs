@@ -45,7 +45,7 @@ public class SafetyServiceIntegrationTests
     var nina = new TestNinaClient();
     var log = new LoggerConfiguration().MinimumLevel.Debug().CreateLogger();
 
-    var service = new SafetyService(watcher, debouncer, orchestrator, nina, log);
+    var service = new SafetyService(watcher, debouncer, orchestrator, nina, log, true);
 
     // Simulate power loss
     File.WriteAllText(_flagFile, "out");

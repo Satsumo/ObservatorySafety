@@ -7,4 +7,7 @@ public interface INinaClient
   Task ParkMountAsync();
   Task WarmCameraAsync();
   Task CloseDomeAsync();
+
+  // Added for shutdown orchestration
+  Task ExecuteShutdownAsync(ShutdownCommand cmd);
 }

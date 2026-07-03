@@ -13,7 +13,7 @@ public class NinaScalarClientTests
   {
     var handler = new MockHttpMessageHandler();
     var options = new NinaOptions { BaseUrl = "http://localhost:1888" };
-    var client = new NinaScalarClient(options, handler);
+    var client = new NinaScalarClient(options, false, handler);
 
     await client.StopSequenceAsync();
     await client.ParkMountAsync();
@@ -33,7 +33,7 @@ public class NinaScalarClientTests
   {
     var handler = new MockHttpMessageHandler { ResponseStatusCode = System.Net.HttpStatusCode.BadRequest };
     var options = new NinaOptions { BaseUrl = "http://localhost:1888" };
-    var client = new NinaScalarClient(options, handler);
+    var client = new NinaScalarClient(options, false, handler);
 
     Assert.ThrowsAsync<HttpRequestException>(() => client.StopSequenceAsync());
   }
