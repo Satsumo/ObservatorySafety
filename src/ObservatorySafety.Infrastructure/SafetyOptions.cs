@@ -1,7 +1,10 @@
-﻿namespace ObservatorySafety.Infrastructure;
-
-public class SafetyOptions
+﻿public class SafetyOptions
 {
   public string FlagFilePath { get; set; } = "";
-  public int DebounceSeconds { get; set; } = 30;
+  public int DebounceSeconds { get; set; }
+
+  public string GetExpandedFlagFilePath()
+  {
+    return Environment.ExpandEnvironmentVariables(FlagFilePath);
+  }
 }

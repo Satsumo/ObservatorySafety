@@ -72,6 +72,14 @@ static class Program
 
             return new SafetyService(watcher, debouncer, orchestrator, nina, log, simulatePowerLoss);
           });
+
+          services.AddHostedService(sp =>
+          {
+            var opts = sp.GetRequiredService<IOptions<SafetyOptions>>().Value;
+            var log = sp.GetRequiredService<Serilog.ILogger>();
+            return new PowerMonitorService(opts.GetExpandedFlagFilePath(), log);
+          });
+
         });
 
     if (!runAsConsole)

@@ -37,7 +37,7 @@ public class SafetyService : BackgroundService
     _debouncer.PowerLossConfirmed += async (_, __) =>
     {
       _log.Warning("Power loss confirmed after debounce threshold.");
-      var cmd = _orchestrator.GetCommandFor(new PowerStatus(false, true));
+      var cmd = _orchestrator.GetCommandFor(new Core.PowerStatus(false, true));
       if (cmd != null)
       {
         _log.Information("Executing shutdown command: {@Command}", cmd);
@@ -53,7 +53,7 @@ public class SafetyService : BackgroundService
     if (_simulatePowerLoss)
     {
       _log.Warning("Simulated power loss triggered.");
-      var cmd = _orchestrator.GetCommandFor(new PowerStatus(false, true));
+      var cmd = _orchestrator.GetCommandFor(new Core.PowerStatus(false, true));
       if (cmd != null)
         await _nina.ExecuteShutdownAsync(cmd);
     }

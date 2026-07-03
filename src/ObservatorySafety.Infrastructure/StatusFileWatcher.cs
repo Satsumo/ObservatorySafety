@@ -11,7 +11,7 @@ public class StatusFileWatcher : IDisposable
 
   public StatusFileWatcher(SafetyOptions options)
   {
-    _flagFile = options.FlagFilePath;
+    _flagFile = options.GetExpandedFlagFilePath();
 
     _watcher = new FileSystemWatcher(
         Path.GetDirectoryName(_flagFile)!,
