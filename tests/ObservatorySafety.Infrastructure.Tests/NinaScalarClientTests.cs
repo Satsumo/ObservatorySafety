@@ -15,7 +15,6 @@ public class NinaScalarClientTests
     var options = new NinaOptions { BaseUrl = "http://localhost:1888" };
     var client = new NinaScalarClient(options, false, handler);
 
-    await client.AbortCameraExposureAsync();
     await client.StopSequenceAsync();
     await client.ParkMountAsync();
     await client.WarmCameraAsync();
@@ -23,11 +22,10 @@ public class NinaScalarClientTests
 
     var paths = handler.Requests.Select(r => r.RequestUri!.AbsolutePath).ToList();
 
-    CollectionAssert.Contains(paths, "/api/v2/equipment/camera/abort-exposure");
-    CollectionAssert.Contains(paths, "/api/v2/sequences/stop");
-    CollectionAssert.Contains(paths, "/api/v2/mount/park");
-    CollectionAssert.Contains(paths, "/api/v2/camera/warm");
-    CollectionAssert.Contains(paths, "/api/v2/dome/close");
+    Assert.That(paths, Has.Member("/v2/api/sequence/stop"));
+    Assert.That(paths, Has.Member("/v2/api/equipment/mount/park"));
+    Assert.That(paths, Has.Member("/v2/api/equipment/camera/warm"));
+    Assert.That(paths, Has.Member("/v2/api/equipment/dome/close"));
   }
 
   [Test]
@@ -37,6 +35,6 @@ public class NinaScalarClientTests
     var options = new NinaOptions { BaseUrl = "http://localhost:1888" };
     var client = new NinaScalarClient(options, false, handler);
 
-    Assert.ThrowsAsync<HttpRequestException>(() => client.AbortCameraExposureAsync());
+    Assert.ThrowsAsync<HttpRequestException>(() => client.StopSequenceAsync());
   }
 }

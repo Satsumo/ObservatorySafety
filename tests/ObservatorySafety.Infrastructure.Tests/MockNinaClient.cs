@@ -1,4 +1,5 @@
 ﻿using ObservatorySafety.Core;
+using ObservatorySafety.Core.Model;
 
 namespace ObservatorySafety.Infrastructure.Tests;
 
@@ -8,8 +9,7 @@ namespace ObservatorySafety.Infrastructure.Tests;
 /// </summary>
 public class MockNinaClient : INinaClient
 {
-  public int AbortCameraExposureCount { get; private set; }
-  public int AbortSequenceCount { get; private set; }
+  public int GetMountInfoCount { get; private set; }
   public int StopSequenceCount { get; private set; }
   public int ParkCount { get; private set; }
   public int WarmCount { get; private set; }
@@ -17,18 +17,26 @@ public class MockNinaClient : INinaClient
 
   public List<string> CallLog { get; } = new();
 
-  public Task AbortCameraExposureAsync()
+  public Task<EquipmentInfoEnvelope> GetEquipmentInfoAsync()
   {
-    AbortCameraExposureCount++;
-    CallLog.Add("AbortCameraExposure");
-    return Task.CompletedTask;
-  }
-  
-  public Task AbortSequenceAsync()
-  {
-    AbortSequenceCount++;
-    CallLog.Add("AbortSequence");
-    return Task.CompletedTask;
+    GetMountInfoCount++;
+    CallLog.Add("GetMountInfo");
+    var envelope = new EquipmentInfoEnvelope
+    {
+      Response = new EquipmentInfo
+      {
+        Camera = new EquipmentCameraInfo { CoolerOn = true },
+        Dome = new EquipmentDomeInfo { ShutterStatus = "ShutterOpen", Slewing = false, AtPark = false, Connected = true },
+        Mount = new EquipmentMountInfo { AtPark = false, Slewing = false, TrackingEnabled = true, Connected = true },
+        Sequence = new EquipmentSequenceInfo { IsRunning = true },
+        SafetyMonitor = new EquipmentSafetyMonitorInfo { IsSafe = true }
+      },
+      Error = null,
+      StatusCode = 200,
+      Success = true,
+      Type = "EquipmentInfo"
+    };
+    return Task.FromResult(envelope);
   }
 
   public Task StopSequenceAsync()
@@ -61,8 +69,6 @@ public class MockNinaClient : INinaClient
 
   public async Task ExecuteShutdownAsync(ShutdownCommand cmd)
   {
-    if (cmd.AbortCameraExposure) await AbortCameraExposureAsync();
-    if (cmd.AbortSequence) await AbortSequenceAsync();
     if (cmd.StopSequence) await StopSequenceAsync();
     if (cmd.ParkMount) await ParkMountAsync();
     if (cmd.WarmCamera) await WarmCameraAsync();
