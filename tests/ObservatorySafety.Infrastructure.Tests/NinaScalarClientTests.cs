@@ -15,6 +15,7 @@ public class NinaScalarClientTests
     var options = new NinaOptions { BaseUrl = "http://localhost:1888" };
     var client = new NinaScalarClient(options, false, handler);
 
+    await client.AbortCameraExposureAsync();
     await client.StopSequenceAsync();
     await client.ParkMountAsync();
     await client.WarmCameraAsync();
@@ -22,6 +23,7 @@ public class NinaScalarClientTests
 
     var paths = handler.Requests.Select(r => r.RequestUri!.AbsolutePath).ToList();
 
+    CollectionAssert.Contains(paths, "/api/v1/equipment/camera/abort-exposure");
     CollectionAssert.Contains(paths, "/api/v1/sequences/stop");
     CollectionAssert.Contains(paths, "/api/v1/mount/park");
     CollectionAssert.Contains(paths, "/api/v1/camera/warm");
@@ -35,6 +37,6 @@ public class NinaScalarClientTests
     var options = new NinaOptions { BaseUrl = "http://localhost:1888" };
     var client = new NinaScalarClient(options, false, handler);
 
-    Assert.ThrowsAsync<HttpRequestException>(() => client.StopSequenceAsync());
+    Assert.ThrowsAsync<HttpRequestException>(() => client.AbortCameraExposureAsync());
   }
 }

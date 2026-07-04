@@ -8,24 +8,32 @@ namespace ObservatorySafety.Infrastructure.Tests;
 /// </summary>
 public class MockNinaClient : INinaClient
 {
-  public int AbortCount { get; private set; }
-  public int StopCount { get; private set; }
+  public int AbortCameraExposureCount { get; private set; }
+  public int AbortSequenceCount { get; private set; }
+  public int StopSequenceCount { get; private set; }
   public int ParkCount { get; private set; }
   public int WarmCount { get; private set; }
   public int CloseCount { get; private set; }
 
   public List<string> CallLog { get; } = new();
 
+  public Task AbortCameraExposureAsync()
+  {
+    AbortCameraExposureCount++;
+    CallLog.Add("AbortCameraExposure");
+    return Task.CompletedTask;
+  }
+  
   public Task AbortSequenceAsync()
   {
-    AbortCount++;
+    AbortSequenceCount++;
     CallLog.Add("AbortSequence");
     return Task.CompletedTask;
   }
 
   public Task StopSequenceAsync()
   {
-    StopCount++;
+    StopSequenceCount++;
     CallLog.Add("StopSequence");
     return Task.CompletedTask;
   }
@@ -53,6 +61,8 @@ public class MockNinaClient : INinaClient
 
   public async Task ExecuteShutdownAsync(ShutdownCommand cmd)
   {
+    if (cmd.AbortCameraExposure) await AbortCameraExposureAsync();
+    if (cmd.AbortSequence) await AbortSequenceAsync();
     if (cmd.StopSequence) await StopSequenceAsync();
     if (cmd.ParkMount) await ParkMountAsync();
     if (cmd.WarmCamera) await WarmCameraAsync();

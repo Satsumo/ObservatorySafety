@@ -2,6 +2,7 @@
 
 public interface INinaClient
 {
+  Task AbortCameraExposureAsync();
   Task AbortSequenceAsync();
   Task StopSequenceAsync();
   Task ParkMountAsync();

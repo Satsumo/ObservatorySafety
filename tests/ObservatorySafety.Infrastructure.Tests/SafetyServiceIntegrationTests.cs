@@ -54,13 +54,14 @@ public class SafetyServiceIntegrationTests
     File.WriteAllText(_flagFile, "out");
     await Task.Delay(1500);
 
-    Assert.That(1, Is.EqualTo(nina.StopCount));
+    Assert.That(1, Is.EqualTo(nina.AbortCameraExposureCount));
+    Assert.That(1, Is.EqualTo(nina.StopSequenceCount));
     Assert.That(1, Is.EqualTo(nina.ParkCount));
     Assert.That(1, Is.EqualTo(nina.WarmCount));
     Assert.That(1, Is.EqualTo(nina.CloseCount));
 
     Assert.That( nina.CallLog,
-                 Is.EqualTo(new[] { "StopSequence", "ParkMount", "WarmCamera", "CloseDome" }).AsCollection
+                 Is.EqualTo(new[] { "AbortCameraExposure", "StopSequence", "ParkMount", "WarmCamera", "CloseDome" }).AsCollection
 );
   }
 }

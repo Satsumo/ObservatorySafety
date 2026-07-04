@@ -1,6 +1,14 @@
 {
   "profiles": {
-    "ObservatorySafety.Service": {
+    "NINA ObservatorySafety.Service": {
+      "commandName": "Project",
+      "commandLineArgs": "--console",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true
+    },
+    "DRY-RUN ObservatorySafety.Service": {
       "commandName": "Project",
       "commandLineArgs": "--console --dry-run",
       "environmentVariables": {
