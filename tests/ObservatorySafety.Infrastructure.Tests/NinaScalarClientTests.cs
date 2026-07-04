@@ -23,11 +23,11 @@ public class NinaScalarClientTests
 
     var paths = handler.Requests.Select(r => r.RequestUri!.AbsolutePath).ToList();
 
-    CollectionAssert.Contains(paths, "/api/v1/equipment/camera/abort-exposure");
-    CollectionAssert.Contains(paths, "/api/v1/sequences/stop");
-    CollectionAssert.Contains(paths, "/api/v1/mount/park");
-    CollectionAssert.Contains(paths, "/api/v1/camera/warm");
-    CollectionAssert.Contains(paths, "/api/v1/dome/close");
+    CollectionAssert.Contains(paths, "/api/v2/equipment/camera/abort-exposure");
+    CollectionAssert.Contains(paths, "/api/v2/sequences/stop");
+    CollectionAssert.Contains(paths, "/api/v2/mount/park");
+    CollectionAssert.Contains(paths, "/api/v2/camera/warm");
+    CollectionAssert.Contains(paths, "/api/v2/dome/close");
   }
 
   [Test]

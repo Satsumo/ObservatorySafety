@@ -23,12 +23,12 @@ public class NinaScalarClient : INinaClient
       _http.DefaultRequestHeaders.Add("X-Api-Key", options.ApiKey);
   }
 
-  public Task AbortCameraExposureAsync() => Post("/api/v1/equipment/camera/abort-exposure");
-  public Task AbortSequenceAsync() => Post("/api/v1/sequences/abort");
-  public Task StopSequenceAsync() => Post("/api/v1/sequences/stop");
-  public Task ParkMountAsync() => Post("/api/v1/mount/park");
-  public Task WarmCameraAsync() => Post("/api/v1/camera/warm");
-  public Task CloseDomeAsync() => Post("/api/v1/dome/close");
+  public Task AbortCameraExposureAsync() => Post(INinaClient.API_ABORT_CAMERA_EXPOSURE);
+  public Task AbortSequenceAsync() => Post(INinaClient.API_ABORT_SEQUENCE);
+  public Task StopSequenceAsync() => Post(INinaClient.API_STOP_SEQUENCE);
+  public Task ParkMountAsync() => Post(INinaClient.API_PARK_MOUNT);
+  public Task WarmCameraAsync() => Post(INinaClient.API_WARM_CAMERA);
+  public Task CloseDomeAsync() => Post(INinaClient.API_CLOSE_DOME);
 
   public async Task ExecuteShutdownAsync(ShutdownCommand cmd)
   {
