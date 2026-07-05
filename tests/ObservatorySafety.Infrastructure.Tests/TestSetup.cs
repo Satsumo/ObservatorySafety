@@ -1,0 +1,16 @@
+﻿using ObservatorySafety.Core;
+using ObservatorySafety.Core.Tests;
+
+namespace ObservatorySafety.Infrastructure.Tests
+{
+  [SetUpFixture]
+  public class TestSetup
+  {
+    [OneTimeSetUp]
+    public void Init()
+    {
+      LogProvider.Factory = TestLogging.CreateFactory();
+    }
+  }
+
+}

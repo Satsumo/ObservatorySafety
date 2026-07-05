@@ -1,19 +1,28 @@
 using Microsoft.Extensions.Options;
+
 using ObservatorySafety.Core;
 using ObservatorySafety.Infrastructure;
 using ObservatorySafety.Service;
+
 using Serilog;
+using Serilog.Events;
 
 static class Program
 {
+  private static String ARG_CONSOLE = "--console";
+  private static String ARG_DRY_RUN = "--dry-run";
+  private static String ARG_SIMULATE_POWER_LOSS = "--simulate-power-loss";
+  private static String ARG_LOGGING_LEVEL = "--logging-minimumLevel";
+  private static String ARG_CONFIG = "--config";
+
   public static async Task Main(string[] args)
   {
-    bool runAsConsole = args.Contains("--console");
-    bool dryRun = args.Contains("--dry-run");
-    bool simulatePowerLoss = args.Contains("--simulate-power-loss");
+    bool runAsConsole = args.Contains(ARG_CONSOLE);
+    bool dryRun = args.Contains(ARG_DRY_RUN);
+    bool simulatePowerLoss = args.Contains(ARG_SIMULATE_POWER_LOSS);
 
     string? configPath = null;
-    var configIndex = Array.IndexOf(args, "--config");
+    var configIndex = Array.IndexOf(args, ARG_CONFIG);
     if (configIndex >= 0 && configIndex + 1 < args.Length)
     {
       configPath = args[configIndex + 1];
@@ -30,12 +39,23 @@ static class Program
           {
             cfg.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
           }
+
         })
         .UseSerilog((ctx, services, loggerConfig) =>
         {
           loggerConfig
                   .ReadFrom.Configuration(ctx.Configuration)
                   .ReadFrom.Services(services);
+
+          // Look for debug logging level
+          var arg = args.FirstOrDefault(a => a.StartsWith(ARG_LOGGING_LEVEL, StringComparison.OrdinalIgnoreCase));
+          if (arg != null)
+          {
+            var levelText = arg.Split('=', 2)[1]; // get the value
+            var level = Enum.Parse<LogEventLevel>(levelText, ignoreCase: true);
+            loggerConfig.MinimumLevel.Is(level);
+          }
+
         })
         .ConfigureServices((ctx, services) =>
         {
@@ -95,6 +115,13 @@ static class Program
       Console.WriteLine("Ctrl+C received, shutting down...");
       host.StopAsync().Wait();
     };
+
+    // Capture the logger factory here — AFTER the host is built
+    LogProvider.Factory = host.Services.GetRequiredService<ILoggerFactory>();
+
+    // Log the startup message with arguments
+    LogProvider.Factory.CreateLogger<SafetyService>().Log(LogLevel.Information,
+      $"Starting ObservatorySafety.Service:\nStarting with args:\n{String.Join("\n", args)}\n");
 
     await host.RunAsync();
   }

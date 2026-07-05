@@ -2,7 +2,7 @@
   "profiles": {
     "NINA ObservatorySafety.Service": {
       "commandName": "Project",
-      "commandLineArgs": "--console",
+      "commandLineArgs": "\"--console\" \"--logging-minimumLevel=Debug\"",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
       },
@@ -10,7 +10,7 @@
     },
     "DRY-RUN ObservatorySafety.Service": {
       "commandName": "Project",
-      "commandLineArgs": "--console --dry-run",
+      "commandLineArgs": "\"--console\" \"--dry-run\" \"--logging-minimumLevel=Debug\"",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
       },

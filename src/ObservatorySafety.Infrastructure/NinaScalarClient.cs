@@ -1,14 +1,17 @@
-﻿using System.IO;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
+
+using Microsoft.Extensions.Logging;
 
 using ObservatorySafety.Core;
 using ObservatorySafety.Core.Model;
+
 
 namespace ObservatorySafety.Infrastructure;
 
 public class NinaScalarClient : INinaClient
 {
+  private readonly ILogger<NinaScalarClient> _logger = LogProvider.Factory.CreateLogger<NinaScalarClient>();
   private readonly HttpClient _http;
   private readonly bool _dryRun;
 
@@ -35,34 +38,29 @@ public class NinaScalarClient : INinaClient
         Content = new StringContent("{}", Encoding.UTF8, "application/json")
       };
 
-      // LOG EVERYTHING
-      Console.WriteLine("=== REQUEST ===");
-      Console.WriteLine("BaseAddress: " + _http.BaseAddress);
-      Console.WriteLine("RequestUri: " + req.RequestUri);
-      Console.WriteLine("Headers:\n" + req.Headers);
-      Console.WriteLine("Content Headers:\n" + req.Content.Headers);
-      Console.WriteLine("Body:\n" + await req.Content.ReadAsStringAsync());
+      _logger.Log(LogLevel.Debug, $"=== REQUEST ===\nBaseAddress: {_http.BaseAddress
+        }\nRequestUri: {req.RequestUri
+        }\nHeaders:\n{req.Headers
+        }\nContent Headers:\n{req.Content.Headers
+        }\nBody:\n{await req.Content.ReadAsStringAsync()
+        }");
+
       var resp = await _http.SendAsync(req);
+      resp.EnsureSuccessStatusCode();
 
-      var requestContent = await req.Content.ReadAsStringAsync();
+      var json = await resp.Content.ReadAsStringAsync();
 
-      Console.WriteLine("=== RESPONSE ===");
-      Console.WriteLine("Status: " + resp.StatusCode);
-      Console.WriteLine("Reason: " + resp.ReasonPhrase);
-      Console.WriteLine("Response Headers:\n" + resp.Headers);
-      Console.WriteLine("Response Body:\n" + await resp.Content.ReadAsStringAsync());
-      
-      var response = await _http.GetAsync(INinaClient.API_EQUIPMENT_INFO);
+      _logger.Log(LogLevel.Debug, $"=== RESPONSE ===\nStatus: {resp.StatusCode
+        }\nReason: {resp.ReasonPhrase
+        }\nResponse Headers:\n{resp.Headers
+        }\nResponse Body:\n{await resp.Content.ReadAsStringAsync()
+        }");
 
-      response.EnsureSuccessStatusCode();
-
-      var json = await response.Content.ReadAsStringAsync();
-      Console.WriteLine("Deserializing JSON into EquipmentInfoEnvelope:\n" + json);
       return JsonSerializer.Deserialize<EquipmentInfoEnvelope>(json)!;
     }
     catch (Exception ex)
     {
-      Console.WriteLine($"Error getting equipment info: {ex.Message}");
+      _logger.LogError(ex, "Error getting equipment info!");
       throw;
     }
   }
@@ -73,44 +71,48 @@ public class NinaScalarClient : INinaClient
   public Task CloseDomeAsync() => Call(HttpMethod.Get, INinaClient.API_CLOSE_DOME);
   public async Task ExecuteShutdownAsync(ShutdownCommand cmd)
   {
+    _logger.LogInformation("Starting shutdown...");
+
     if (cmd.StopSequence)
     {
+      _logger.LogInformation("Stopping sequence...");
       await StopSequenceAsync();
       await WaitUntil(async () => !await IsSequenceRunningAsync(),
           "Sequence did not stop");
+      _logger.LogInformation("Sequence stopped.");
     }
 
     if (cmd.ParkMount)
     {
+      _logger.LogInformation("Parking mount...");
       await ParkMountAsync();
       await WaitUntil(async () => await IsMountParkedAsync(),
-          "Mount did not park");
-      await WaitUntil(async () => await IsMountIdleAsync(),
-          "Mount is still slewing or tracking");
+          "Mount did not park or it is still slewing/tracking", 5000);
+      _logger.LogInformation("Mount parked.");
     }
 
     if (cmd.WarmCamera)
     {
+      _logger.LogInformation("Warming camera...");
       await WarmCameraAsync();
       await WaitUntil(async () => await IsCameraWarmingAsync(),
           "Camera did not warm");
+      _logger.LogInformation("Camera warmed.");
     }
 
     if (cmd.CloseDome)
     {
+      _logger.LogInformation("Closing dome...");
       await CloseDomeAsync();
       await WaitUntil(async () => await IsDomeClosedAsync(),
-          "Dome did not close");
+          "Dome did not close", 10000);
+      _logger.LogInformation("Dome closed.");
     }
+
+    _logger.LogInformation("Shutdown completed.");
   }
 
   private async Task<bool> IsMountParkedAsync()
-  {
-    var info = await GetEquipmentInfoAsync();
-    return info.Response?.Mount?.AtPark ?? false;
-  }
-
-  private async Task<bool> IsMountIdleAsync()
   {
     var m = (await GetEquipmentInfoAsync()).Response?.Mount;
     return m != null && m.AtPark && !m.Slewing && !m.TrackingEnabled;
@@ -149,32 +151,31 @@ public class NinaScalarClient : INinaClient
         Content = new StringContent("{}", Encoding.UTF8, "application/json")
       };
 
-      // LOG EVERYTHING
-      Console.WriteLine("=== REQUEST ===");
-      Console.WriteLine("BaseAddress: " + _http.BaseAddress);
-      Console.WriteLine("RequestUri: " + req.RequestUri);
-      Console.WriteLine("Headers:\n" + req.Headers);
-      Console.WriteLine("Content Headers:\n" + req.Content.Headers);
-      Console.WriteLine("Body:\n" + await req.Content.ReadAsStringAsync());
+      _logger.Log(LogLevel.Debug, $"=== REQUEST ===\nBaseAddress: {_http.BaseAddress
+        }\nRequestUri: {req.RequestUri
+        }\nHeaders:\n{req.Headers
+        }\nContent Headers:\n{req.Content.Headers
+        }\nBody:\n{await req.Content.ReadAsStringAsync()
+        }");
+
       var resp = await _http.SendAsync(req);
-
-      var requestContent = await req.Content.ReadAsStringAsync();
-
-      Console.WriteLine("=== RESPONSE ===");
-      Console.WriteLine("Status: " + resp.StatusCode);
-      Console.WriteLine("Reason: " + resp.ReasonPhrase);
-      Console.WriteLine("Response Headers:\n" + resp.Headers);
-      Console.WriteLine("Response Body:\n" + await resp.Content.ReadAsStringAsync());
-
       resp.EnsureSuccessStatusCode();
+
+      var requestContent = await resp.Content.ReadAsStringAsync();
+
+      _logger.Log(LogLevel.Debug, $"=== RESPONSE ===\nStatus: {resp.StatusCode
+        }\nReason: {resp.ReasonPhrase
+        }\nResponse Headers:\n{resp.Headers
+        }\nResponse Body:\n{requestContent}");
+      
     }
     catch (Exception ex)
     {
-      Console.WriteLine($"Error posting to base:{_http.BaseAddress} path:{path}: {ex.Message}");
+      _logger.LogError(ex, $"Error {method.ToString()} to base:{_http.BaseAddress} path:{path}: {ex.Message}");
       throw;
     }
   }
-  private async Task WaitUntil(Func<Task<bool>> condition, string failureMessage, int timeoutSeconds = 60)
+  private async Task WaitUntil(Func<Task<bool>> condition, string failureMessage, int pollingDelay = 1000, int timeoutSeconds = 60)
   {
     var start = DateTime.UtcNow;
 
@@ -183,7 +184,7 @@ public class NinaScalarClient : INinaClient
       if (await condition())
         return;
 
-      await Task.Delay(1000);
+      await Task.Delay(pollingDelay);
     }
 
     throw new Exception(failureMessage);
