@@ -25,4 +25,9 @@
     <ProjectReference Include="..\ObservatorySafety.Infrastructure\ObservatorySafety.Infrastructure.csproj" />
     <ProjectReference Include="..\ObservatorySafety.Core\ObservatorySafety.Core.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
 </Project>

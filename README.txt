@@ -15,4 +15,5 @@ ObservatorySafety.Service.exe --console --config C:\obs\config.json
 Other flags:
 --dry-run : Run without making any NINA calls (for testing purposes).
 --simulate-power-loss : Simulate a power loss event (for testing purposes).
+--logging-minimumLevel : Override the default logging level (default is Information)
 
