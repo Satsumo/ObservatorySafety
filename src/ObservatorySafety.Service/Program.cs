@@ -61,19 +61,7 @@ static class Program
         {
           services.Configure<NinaOptions>(ctx.Configuration.GetSection("Nina"));
           services.Configure<SafetyOptions>(ctx.Configuration.GetSection("Safety"));
-
-          services.AddSingleton(sp =>
-          {
-            var safetyOpts = sp.GetRequiredService<IOptions<SafetyOptions>>().Value;
-            return new StatusFileWatcher(safetyOpts);
-          });
-
-          services.AddSingleton(sp =>
-          {
-            var safetyOpts = sp.GetRequiredService<IOptions<SafetyOptions>>().Value;
-            return new PowerLossDebouncer(TimeSpan.FromSeconds(safetyOpts.DebounceSeconds));
-          });
-
+          
           services.AddSingleton<ShutdownOrchestrator>();
 
           services.AddSingleton<INinaClient>(sp =>
@@ -82,23 +70,29 @@ static class Program
             return new NinaScalarClient(ninaOpts, dryRun);
           });
 
+          services.AddSingleton<IPowerStatusProvider>(psp => {
+            return new WmiPowerStatusProvider();
+          });
+
+          services.AddSingleton<PowerMonitorService>(pms => {
+            var powerStatusProvider = pms.GetRequiredService<IPowerStatusProvider>();
+            var safetyOpts = pms.GetRequiredService<IOptions<SafetyOptions>>().Value;
+
+            return new PowerMonitorService(powerStatusProvider, TimeSpan.FromSeconds(safetyOpts.PowerOutageConfirmedThresholdSeconds));
+          });
+
+          services.AddHostedService(sp => sp.GetRequiredService<PowerMonitorService>());
+
           services.AddHostedService(sp =>
           {
-            var watcher = sp.GetRequiredService<StatusFileWatcher>();
-            var debouncer = sp.GetRequiredService<PowerLossDebouncer>();
+            var watcher = sp.GetRequiredService<PowerMonitorService>();
             var orchestrator = sp.GetRequiredService<ShutdownOrchestrator>();
             var nina = sp.GetRequiredService<INinaClient>();
-            var log = sp.GetRequiredService<Serilog.ILogger>();
 
-            return new SafetyService(watcher, debouncer, orchestrator, nina, log, simulatePowerLoss);
+            return new SafetyService(watcher, orchestrator, nina, simulatePowerLoss);
           });
 
-          services.AddHostedService(sp =>
-          {
-            var opts = sp.GetRequiredService<IOptions<SafetyOptions>>().Value;
-            var log = sp.GetRequiredService<Serilog.ILogger>();
-            return new PowerMonitorService(opts.GetExpandedFlagFilePath(), log);
-          });
+          
 
         });
 

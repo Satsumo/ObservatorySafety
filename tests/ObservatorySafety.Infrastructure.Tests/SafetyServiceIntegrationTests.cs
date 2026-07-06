@@ -1,4 +1,6 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.Logging;
+
+using Moq;
 
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
@@ -6,6 +8,7 @@ using NUnit.Framework.Legacy;
 using ObservatorySafety.Core;
 using ObservatorySafety.Core.Tests;
 using ObservatorySafety.Infrastructure;
+using ObservatorySafety.Infrastructure.Tests.Mock;
 using ObservatorySafety.Service;
 
 using Serilog;
@@ -22,45 +25,72 @@ public class SafetyServiceIntegrationTests
   [SetUp]
   public void Setup()
   {
-    _tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-    Directory.CreateDirectory(_tempDir);
-    _flagFile = Path.Combine(_tempDir, "power_out.flag");
+
   }
 
   [TearDown]
   public void TearDown()
   {
-    Directory.Delete(_tempDir, true);
   }
 
   [Test]
   public async Task SafetyService_TriggersShutdown_AfterDebounce()
   {
+    var loggerFactory = LoggerFactory.Create(builder =>
+    {
+      builder
+          .SetMinimumLevel(LogLevel.Debug)
+          .AddConsole();   // logs appear in test output
+    });
+
+    // Make your LogProvider use this factory
+    LogProvider.Factory = loggerFactory;
+    var logger = LogProvider.Factory.CreateLogger<SafetyServiceIntegrationTests>();
+
     var safetyOpts = new SafetyOptions
     {
-      FlagFilePath = _flagFile,
-      DebounceSeconds = 1
+      PowerOutageConfirmedThresholdSeconds = 1
     };
 
-    var watcher = new StatusFileWatcher(safetyOpts);
-    var debouncer = new PowerLossDebouncer(TimeSpan.FromSeconds(1));
+    var mockPowerStatusProvider = new Mock<IPowerStatusProvider>();
+    
+    var callCount = 0;
+    mockPowerStatusProvider
+        .Setup(p => p.GetPowerStatus())
+        .Returns(() =>
+        {
+          callCount++;
+          
+          var powerStatus = callCount == 1 ? PowerStatus.Online : PowerStatus.OnBattery;
+          logger.LogInformation("GetPowerStatus called {CallCount} times. Status is {powerStatus}", callCount, powerStatus);
+          
+          return powerStatus;
+        });
+
+    var watcher = new PowerMonitorService(mockPowerStatusProvider.Object, TimeSpan.FromSeconds(safetyOpts.PowerOutageConfirmedThresholdSeconds));
     var orchestrator = new ShutdownOrchestrator();
     var nina = new MockNinaClient();
-    var log = new LoggerConfiguration().MinimumLevel.Debug().CreateLogger();
 
-    var service = new SafetyService(watcher, debouncer, orchestrator, nina, log, true);
+    // IMPORTANT: disable auto-start
+    var service = new SafetyService(watcher, orchestrator, nina, false);
 
-    // Simulate power loss
-    File.WriteAllText(_flagFile, "out");
-    await Task.Delay(1500);
+    // Start the background service
+    await watcher.StartAsync(CancellationToken.None);
 
-    Assert.That(1, Is.EqualTo(nina.StopSequenceCount));
-    Assert.That(1, Is.EqualTo(nina.ParkCount));
-    Assert.That(1, Is.EqualTo(nina.WarmCount));
-    Assert.That(1, Is.EqualTo(nina.CloseCount));
+    // Allow time for:
+    // - first poll
+    // - debounce window
+    // - second poll
+    // - event propagation
+    await Task.Delay(5000);
 
-    Assert.That( nina.CallLog,
-                 Is.EqualTo(new[] { "StopSequence", "ParkMount", "WarmCamera", "CloseDome" }).AsCollection
-);
+    Assert.That(nina.StopSequenceCount, Is.EqualTo(1));
+    Assert.That(nina.ParkCount, Is.EqualTo(1));
+    Assert.That(nina.WarmCount, Is.EqualTo(1));
+    Assert.That(nina.CloseCount, Is.EqualTo(1));
+
+    Assert.That(nina.CallLog,
+        Is.EqualTo(new[] { "StopSequence", "ParkMount", "WarmCamera", "CloseDome" }).AsCollection);
   }
+
 }

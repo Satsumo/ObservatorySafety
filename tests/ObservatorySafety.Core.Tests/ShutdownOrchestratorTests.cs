@@ -11,7 +11,7 @@ public class ShutdownOrchestratorTests
   public void CriticalPowerLoss_ProducesFullShutdownCommand()
   {
     var orchestrator = new ShutdownOrchestrator();
-    var status = new PowerStatus(false, true);
+    var status = PowerStatus.OnBattery;
 
     var cmd = orchestrator.GetCommandFor(status);
 
@@ -26,7 +26,7 @@ public class ShutdownOrchestratorTests
   public void NormalPower_ProducesNoCommand()
   {
     var orchestrator = new ShutdownOrchestrator();
-    var status = new PowerStatus(true, false);
+    var status = PowerStatus.Online;
 
     var cmd = orchestrator.GetCommandFor(status);
 

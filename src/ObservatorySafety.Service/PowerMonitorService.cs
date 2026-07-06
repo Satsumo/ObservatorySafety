@@ -1,48 +1,79 @@
-﻿using Microsoft.Extensions.Hosting;
-
-using Serilog;
-
-using System.Windows.Forms; // required for SystemInformation
-
-namespace ObservatorySafety.Service;
+﻿using ObservatorySafety.Core;
 
 public class PowerMonitorService : BackgroundService
 {
-  private readonly string _flagFile;
-  private readonly Serilog.ILogger _log;
+  private readonly ILogger<PowerMonitorService> _logger = LogProvider.Factory.CreateLogger<PowerMonitorService>();
+  private readonly IPowerStatusProvider _powerStatusProvider;
+  private readonly TimeSpan _powerlossConfirmedThreshold;
 
-  public PowerMonitorService(string flagFile, Serilog.ILogger log)
+  public event EventHandler? PowerLost;
+
+  private PowerStatus _lastStatus = PowerStatus.Online;
+
+  public PowerMonitorService(IPowerStatusProvider powerStatusProvider, TimeSpan powerlossConfirmedThreshold)
   {
-    _flagFile = flagFile;
-    _log = log;
+    _powerStatusProvider = powerStatusProvider;
+    _powerlossConfirmedThreshold = powerlossConfirmedThreshold;
   }
 
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
-    _log.Information("PowerMonitorService started.");
+    _logger.LogInformation("PowerMonitorService started.");
 
     while (!stoppingToken.IsCancellationRequested)
     {
-      var status = SystemInformation.PowerStatus.PowerLineStatus;
+      var current = _powerStatusProvider.GetPowerStatus();
 
-      if (status == PowerLineStatus.Offline)
+      if (current != _lastStatus)
       {
-        if (!File.Exists(_flagFile))
+        _logger.LogWarning("Power status changed: {Status}", current);
+        _lastStatus = current;
+
+        if (current == PowerStatus.OnBattery)
         {
-          _log.Warning("UPS reports mains power OFF — creating flag file.");
-          File.WriteAllText(_flagFile, "power_out");
+          // Confirm outage for 30 seconds
+          if (await ConfirmPowerLossAsync(stoppingToken))
+          {
+            PowerLost?.Invoke(this, EventArgs.Empty);
+          }
+        }
+        else
+        {
+          _lastStatus = PowerStatus.Online;
         }
       }
-      else
-      {
-        if (File.Exists(_flagFile))
-        {
-          _log.Information("UPS reports mains power ON — deleting flag file.");
-          File.Delete(_flagFile);
-        }
-      }
 
-      await Task.Delay(1000, stoppingToken);
+      await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
     }
+
+    _logger.LogInformation("PowerMonitorService stopped.");
   }
+
+  private async Task<bool> ConfirmPowerLossAsync(CancellationToken token)
+  {
+    var start = DateTime.UtcNow;
+
+    while (DateTime.UtcNow - start < _powerlossConfirmedThreshold)
+    {
+      if (token.IsCancellationRequested)
+      {
+        _logger.LogInformation("Cancellation requested hence power loss ignored.");
+        return false;
+      }
+
+      var status = _powerStatusProvider.GetPowerStatus();
+
+      if (status == PowerStatus.Online)
+      {
+        _logger.LogInformation("Power restored during confirmation window.");
+        return false;
+      }
+
+      await Task.Delay(TimeSpan.FromSeconds(1), token);
+    }
+
+    _logger.LogWarning("Power loss confirmed after {Seconds} seconds.", _powerlossConfirmedThreshold.TotalSeconds);
+    return true;
+  }
+
 }

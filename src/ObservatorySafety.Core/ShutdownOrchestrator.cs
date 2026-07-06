@@ -4,7 +4,7 @@ public class ShutdownOrchestrator
 {
   public ShutdownCommand? GetCommandFor(PowerStatus status)
   {
-    if (!status.IsOnGrid && status.IsCritical)
+    if (status == PowerStatus.OnBattery)
     {
       return new ShutdownCommand(
           StopSequence: true,

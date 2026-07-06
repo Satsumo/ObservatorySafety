@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ObservatorySafety.Infrastructure.Tests;
+namespace ObservatorySafety.Infrastructure.Tests.Mock;
 
 public class MockHttpMessageHandler : HttpMessageHandler
 {

@@ -1,46 +1,34 @@
 using ObservatorySafety.Core;
-using ObservatorySafety.Infrastructure;
-
 
 namespace ObservatorySafety.Service;
 
 public class SafetyService : BackgroundService
 {
-  private readonly StatusFileWatcher _watcher;
-  private readonly PowerLossDebouncer _debouncer;
+  private readonly ILogger<SafetyService> _logger = LogProvider.Factory.CreateLogger<SafetyService>();
+
+  private readonly PowerMonitorService _watcher;
   private readonly ShutdownOrchestrator _orchestrator;
   private readonly INinaClient _nina;
-  private readonly Serilog.ILogger _log;
   private readonly bool _simulatePowerLoss;
 
   public SafetyService(
-      StatusFileWatcher watcher,
-      PowerLossDebouncer debouncer,
+      PowerMonitorService watcher,
       ShutdownOrchestrator orchestrator,
       INinaClient nina,
-      Serilog.ILogger log,
       bool simulatePowerLoss)
   {
     _watcher = watcher;
-    _debouncer = debouncer;
     _orchestrator = orchestrator;
     _nina = nina;
-    _log = log;
     _simulatePowerLoss = simulatePowerLoss;
 
-    _watcher.StatusChanged += (_, status) =>
+    _watcher.PowerLost += async (_, __) =>
     {
-      _log.Information("Power status changed: {@Status}", status);
-      _debouncer.OnStatusChanged(status);
-    };
-
-    _debouncer.PowerLossConfirmed += async (_, __) =>
-    {
-      _log.Warning("Power loss confirmed after debounce threshold.");
-      var cmd = _orchestrator.GetCommandFor(new Core.PowerStatus(false, true));
+      _logger.Log(LogLevel.Warning, "Power loss confirmed.");
+      var cmd = _orchestrator.GetCommandFor(PowerStatus.OnBattery);
       if (cmd != null)
       {
-        _log.Information("Executing shutdown command: {@Command}", cmd);
+        _logger.Log(LogLevel.Information, "Executing shutdown command: {@Command}", cmd);
         await _nina.ExecuteShutdownAsync(cmd);
       }
     };
@@ -48,12 +36,12 @@ public class SafetyService : BackgroundService
 
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
-    _log.Information("SafetyService started.");
+    _logger.Log(LogLevel.Information, "SafetyService started.");
 
     if (_simulatePowerLoss)
     {
-      _log.Warning("Simulated power loss triggered.");
-      var cmd = _orchestrator.GetCommandFor(new Core.PowerStatus(false, true));
+      _logger.Log(LogLevel.Warning, "Simulated power loss triggered.");
+      var cmd = _orchestrator.GetCommandFor(PowerStatus.OnBattery);
       if (cmd != null)
         await _nina.ExecuteShutdownAsync(cmd);
     }

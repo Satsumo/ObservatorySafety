@@ -1,7 +1,4 @@
-﻿using NUnit.Framework;
-using NUnit.Framework.Legacy;
-
-using ObservatorySafety.Infrastructure;
+﻿using ObservatorySafety.Infrastructure.Tests.Mock;
 
 namespace ObservatorySafety.Infrastructure.Tests;
 

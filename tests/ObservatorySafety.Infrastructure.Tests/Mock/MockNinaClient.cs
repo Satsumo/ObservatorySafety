@@ -1,7 +1,7 @@
 ﻿using ObservatorySafety.Core;
 using ObservatorySafety.Core.Model;
 
-namespace ObservatorySafety.Infrastructure.Tests;
+namespace ObservatorySafety.Infrastructure.Tests.Mock;
 
 /// <summary>
 /// A deterministic mock of INinaClient for integration testing.
