@@ -1,0 +1,61 @@
+name: Build and Publish ObservatorySafety EXE
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore src/ObservatorySafety.Service/ObservatorySafety.Service.csproj
+
+    - name: Build
+      run: dotnet build src/ObservatorySafety.Service/ObservatorySafety.Service.csproj --configuration Release
+
+    - name: Publish single-file EXE
+      run: dotnet publish src/ObservatorySafety.Service/ObservatorySafety.Service.csproj `
+           --configuration Release `
+           --runtime win-x64 `
+           --self-contained true `
+           /p:PublishSingleFile=true `
+           /p:IncludeNativeLibrariesForSelfExtract=true `
+           /p:PublishTrimmed=false `
+           --output ./publish
+
+    - name: Upload EXE artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ObservatorySafety-Service
+        path: publish/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ObservatorySafety-Service
+        path: ./release
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: ObservatorySafety v1.0.${{ github.run_number }}
+        files: ./release/**
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
