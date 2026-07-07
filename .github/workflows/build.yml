@@ -53,39 +53,14 @@ jobs:
     # ============================
     - name: Sign EXE
       run: |
-        signtool sign `
-          /f cert.pfx `
-          /p $env:SIGNING_CERT_PASSWORD `
-          /tr http://timestamp.digicert.com `
-          /td sha256 `
-          /fd sha256 `
-          publish/ObservatorySafety.Service.exe
-      shell: powershell
-      env:
-        SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+        $kitPath = "C:\Program Files (x86)\Windows Kits\10\bin"
+        $signtool = Get-ChildItem -Path $kitPath -Recurse -Filter signtool.exe |
+                    Where-Object { $_.FullName -like "*x64*" } |
+                    Select-Object -First 1
 
-    - name: Upload signed EXE artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ObservatorySafety-Service
-        path: publish/ObservatorySafety.Service.exe
+        if (-not $signtool) {
+            Write-Error "signtool.exe not found on this runner."
+            exit 1
+        }
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Download artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: ObservatorySafety-Service
-        path: ./release
-
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v1.0.${{ github.run_number }}
-        name: ObservatorySafety v1.0.${{ github.run_number }}
-        files: ./release/ObservatorySafety.Service.exe
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        Write-Host "Using
