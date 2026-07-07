@@ -17,7 +17,7 @@ public class ShutdownOrchestrator
     return null;
   }
 
-  public async Task ExecuteAsync(ShutdownCommand cmd, INinaClient nina)
+  public async Task ExecuteAsync(ShutdownCommand cmd, IAstronomyApplicationClient nina)
   {
     if (cmd.StopSequence) await nina.StopSequenceAsync();
     if (cmd.ParkMount) await nina.ParkMountAsync();

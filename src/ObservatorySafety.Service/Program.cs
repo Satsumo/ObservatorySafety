@@ -61,10 +61,11 @@ static class Program
         {
           services.Configure<NinaOptions>(ctx.Configuration.GetSection("Nina"));
           services.Configure<SafetyOptions>(ctx.Configuration.GetSection("Safety"));
-          
+          services.Configure<EquipmentOptions>(ctx.Configuration.GetSection("Equipment"));
+
           services.AddSingleton<ShutdownOrchestrator>();
 
-          services.AddSingleton<HttpService>(s =>
+          services.AddSingleton<IHttpService>(s =>
           {
             var ninaOpts = s.GetRequiredService<IOptions<NinaOptions>>().Value;
             var baseUrl = ninaOpts.BaseUrl;
@@ -73,10 +74,12 @@ static class Program
             return new HttpService(baseUrl, apiKey);
           });
           
-          services.AddSingleton<INinaClient>(sp =>
+          services.AddSingleton<IAstronomyApplicationClient>(sp =>
           {
             var httpService = sp.GetRequiredService<HttpService>();
-            return new NinaScalarClient(httpService);
+            var equipmentOptions = sp.GetRequiredService<IOptions<EquipmentOptions>>().Value;
+
+            return new NinaScalarClient(httpService, equipmentOptions);
           });
 
           services.AddSingleton<IPowerStatusProvider>(psp => {
@@ -96,7 +99,7 @@ static class Program
           {
             var watcher = sp.GetRequiredService<PowerMonitorService>();
             var orchestrator = sp.GetRequiredService<ShutdownOrchestrator>();
-            var nina = sp.GetRequiredService<INinaClient>();
+            var nina = sp.GetRequiredService<IAstronomyApplicationClient>();
 
             return new SafetyService(watcher, orchestrator, nina, simulatePowerLoss);
           });

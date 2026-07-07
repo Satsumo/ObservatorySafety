@@ -2,7 +2,7 @@
 
 namespace ObservatorySafety.Core;
 
-public interface INinaClient
+public interface IAstronomyApplicationClient
 {
   const string API_BASE = "/v2/api";
 

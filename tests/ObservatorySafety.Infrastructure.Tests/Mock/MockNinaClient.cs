@@ -7,7 +7,7 @@ namespace ObservatorySafety.Infrastructure.Tests.Mock;
 /// A deterministic mock of INinaClient for integration testing.
 /// Tracks all calls and never touches real hardware or HTTP.
 /// </summary>
-public class MockNinaClient : INinaClient
+public class MockNinaClient : IAstronomyApplicationClient
 {
   public int IsNinaRunningCount { get; private set; }
   public int GetMountInfoCount { get; private set; }

@@ -4,12 +4,13 @@ using Microsoft.Extensions.Logging;
 
 namespace ObservatorySafety.Core
 {
-  public class HttpService
+  public class HttpService : IHttpService
   {
     private readonly ILogger<HttpService> _logger = LogProvider.Factory.CreateLogger<HttpService>();
     private readonly HttpClient _http;
 
-    public HttpService(string baseUrl, string? apiKey, HttpMessageHandler? handler = null) {
+    public HttpService(string baseUrl, string? apiKey, HttpMessageHandler? handler = null)
+    {
       _http = handler == null
           ? new HttpClient()
           : new HttpClient(handler);
@@ -22,7 +23,7 @@ namespace ObservatorySafety.Core
 
     public async Task<HttpResponseMessage> Call(HttpMethod method, string path)
     {
-      
+
       var req = new HttpRequestMessage(method, path)
       {
         Content = new StringContent("{}", Encoding.UTF8, "application/json")

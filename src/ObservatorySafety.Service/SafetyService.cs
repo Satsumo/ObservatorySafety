@@ -8,13 +8,13 @@ public class SafetyService : BackgroundService
 
   private readonly PowerMonitorService _watcher;
   private readonly ShutdownOrchestrator _orchestrator;
-  private readonly INinaClient _nina;
+  private readonly IAstronomyApplicationClient _nina;
   private readonly bool _simulatePowerLoss;
 
   public SafetyService(
       PowerMonitorService watcher,
       ShutdownOrchestrator orchestrator,
-      INinaClient nina,
+      IAstronomyApplicationClient nina,
       bool simulatePowerLoss)
   {
     _watcher = watcher;

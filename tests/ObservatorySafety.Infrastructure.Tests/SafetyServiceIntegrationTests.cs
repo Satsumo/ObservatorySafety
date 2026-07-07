@@ -11,12 +11,21 @@ namespace ObservatorySafety.Infrastructure.Tests;
 [TestFixture]
 public class SafetyServiceIntegrationTests
 {
-  private string _tempDir = null!;
-  private string _flagFile = null!;
+  private ILogger<SafetyServiceIntegrationTests> _logger;
 
   [SetUp]
   public void Setup()
   {
+    var loggerFactory = LoggerFactory.Create(builder =>
+    {
+      builder
+          .SetMinimumLevel(LogLevel.Debug)
+          .AddConsole();   // logs appear in test output
+    });
+
+    // Make your LogProvider use this factory
+    LogProvider.Factory = loggerFactory;
+    _logger = LogProvider.Factory.CreateLogger<SafetyServiceIntegrationTests>();
 
   }
 
@@ -28,17 +37,7 @@ public class SafetyServiceIntegrationTests
   [Test]
   public async Task SafetyService_TriggersShutdown_AfterDebounce()
   {
-    var loggerFactory = LoggerFactory.Create(builder =>
-    {
-      builder
-          .SetMinimumLevel(LogLevel.Debug)
-          .AddConsole();   // logs appear in test output
-    });
-
-    // Make your LogProvider use this factory
-    LogProvider.Factory = loggerFactory;
-    var logger = LogProvider.Factory.CreateLogger<SafetyServiceIntegrationTests>();
-
+    
     var safetyOpts = new SafetyOptions
     {
       PowerOutageConfirmedThresholdSeconds = 1
@@ -54,7 +53,7 @@ public class SafetyServiceIntegrationTests
           callCount++;
           
           var powerStatus = callCount == 1 ? PowerStatus.Online : PowerStatus.OnBattery;
-          logger.LogInformation("GetPowerStatus called {CallCount} times. Status is {powerStatus}", callCount, powerStatus);
+          _logger.LogInformation("GetPowerStatus called {CallCount} times. Status is {powerStatus}", callCount, powerStatus);
           
           return powerStatus;
         });

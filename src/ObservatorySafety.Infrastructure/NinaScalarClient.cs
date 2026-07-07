@@ -8,21 +8,23 @@ using ObservatorySafety.Core.Model;
 
 namespace ObservatorySafety.Infrastructure;
 
-public class NinaScalarClient : INinaClient
+public class NinaScalarClient : IAstronomyApplicationClient
 {
   private readonly ILogger<NinaScalarClient> _logger = LogProvider.Factory.CreateLogger<NinaScalarClient>();
-  private readonly HttpService _httpService;
+  private readonly IHttpService _httpService;
+  private readonly EquipmentOptions _equipmentOptions;
 
-  public NinaScalarClient(HttpService httpService)
+  public NinaScalarClient(IHttpService httpService, EquipmentOptions equipmentOptions)
   {
     _httpService = httpService;
+    _equipmentOptions = equipmentOptions;
   }
 
   public async Task<EquipmentInfoEnvelope> GetEquipmentInfoAsync()
   {
     try
     {     
-      var resp = await _httpService.Call(HttpMethod.Get, INinaClient.API_EQUIPMENT_INFO);           
+      var resp = await _httpService.Call(HttpMethod.Get, IAstronomyApplicationClient.API_EQUIPMENT_INFO);           
       var json = await resp.Content.ReadAsStringAsync();
 
       return JsonSerializer.Deserialize<EquipmentInfoEnvelope>(json)!;
@@ -38,7 +40,7 @@ public class NinaScalarClient : INinaClient
   {
     try
     {
-      await _httpService.Call(HttpMethod.Get, INinaClient.API_VERSION);
+      await _httpService.Call(HttpMethod.Get, IAstronomyApplicationClient.API_VERSION);
       return true;
     }
     catch (Exception ex)
@@ -48,10 +50,10 @@ public class NinaScalarClient : INinaClient
     }
   }
 
-  public Task StopSequenceAsync() => _httpService.Call(HttpMethod.Get, INinaClient.API_STOP_SEQUENCE);
-  public Task ParkMountAsync() => _httpService.Call(HttpMethod.Get, INinaClient.API_PARK_MOUNT);
-  public Task WarmCameraAsync() => _httpService.Call(HttpMethod.Get, INinaClient.API_WARM_CAMERA);
-  public Task CloseDomeAsync() => _httpService.Call(HttpMethod.Get, INinaClient.API_CLOSE_DOME);
+  public Task StopSequenceAsync() => _httpService.Call(HttpMethod.Get, IAstronomyApplicationClient.API_STOP_SEQUENCE);
+  public Task ParkMountAsync() => _httpService.Call(HttpMethod.Get, IAstronomyApplicationClient.API_PARK_MOUNT);
+  public Task WarmCameraAsync() => _httpService.Call(HttpMethod.Get, IAstronomyApplicationClient.API_WARM_CAMERA);
+  public Task CloseDomeAsync() => _httpService.Call(HttpMethod.Get, IAstronomyApplicationClient.API_CLOSE_DOME);
   public async Task ExecuteShutdownAsync(ShutdownCommand cmd)
   {
     var isNinaRunning = await IsNinaRunningAsync();
@@ -76,7 +78,7 @@ public class NinaScalarClient : INinaClient
       _logger.LogInformation("Parking mount...");
       await ParkMountAsync();
       await WaitUntil(async () => await IsMountParkedAsync(),
-          "Mount did not park or it is still slewing/tracking", 5000);
+          "Mount did not park or it is still slewing/tracking", _equipmentOptions.MountParkTimeThresholdSeconds);
       _logger.LogInformation("Mount parked.");
     }
 
@@ -94,7 +96,7 @@ public class NinaScalarClient : INinaClient
       _logger.LogInformation("Closing dome...");
       await CloseDomeAsync();
       await WaitUntil(async () => await IsDomeClosedAsync(),
-          "Dome did not close", 10000);
+          "Dome did not close", _equipmentOptions.DomeCloseTimeThresholdSeconds);
       _logger.LogInformation("Dome closed.");
     }
 
@@ -125,7 +127,7 @@ public class NinaScalarClient : INinaClient
     return s?.IsRunning ?? false;
   }
 
-  private async Task WaitUntil(Func<Task<bool>> condition, string failureMessage, int pollingDelay = 1000, int timeoutSeconds = 60)
+  private async Task WaitUntil(Func<Task<bool>> condition, string failureMessage, int timeoutSeconds = 60, int pollingDelay = 1000)
   {
     var start = DateTime.UtcNow;
 
