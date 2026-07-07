@@ -9,6 +9,7 @@ namespace ObservatorySafety.Infrastructure.Tests.Mock;
 /// </summary>
 public class MockNinaClient : INinaClient
 {
+  public int IsNinaRunningCount { get; private set; }
   public int GetMountInfoCount { get; private set; }
   public int StopSequenceCount { get; private set; }
   public int ParkCount { get; private set; }
@@ -16,6 +17,13 @@ public class MockNinaClient : INinaClient
   public int CloseCount { get; private set; }
 
   public List<string> CallLog { get; } = new();
+
+  public Task<bool> IsNinaRunningAsync()
+  {
+    IsNinaRunningCount++;
+    CallLog.Add("IsNinaRunning");
+    return Task.FromResult(true);
+  }
 
   public Task<EquipmentInfoEnvelope> GetEquipmentInfoAsync()
   {

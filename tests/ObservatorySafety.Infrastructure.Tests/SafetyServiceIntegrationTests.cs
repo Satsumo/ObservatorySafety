@@ -2,17 +2,9 @@
 
 using Moq;
 
-using NUnit.Framework;
-using NUnit.Framework.Legacy;
-
 using ObservatorySafety.Core;
-using ObservatorySafety.Core.Tests;
-using ObservatorySafety.Infrastructure;
 using ObservatorySafety.Infrastructure.Tests.Mock;
 using ObservatorySafety.Service;
-
-using Serilog;
-using Serilog.Core;
 
 namespace ObservatorySafety.Infrastructure.Tests;
 

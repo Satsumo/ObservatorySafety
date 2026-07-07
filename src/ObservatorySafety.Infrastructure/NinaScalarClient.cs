@@ -6,55 +6,24 @@ using Microsoft.Extensions.Logging;
 using ObservatorySafety.Core;
 using ObservatorySafety.Core.Model;
 
-
 namespace ObservatorySafety.Infrastructure;
 
 public class NinaScalarClient : INinaClient
 {
   private readonly ILogger<NinaScalarClient> _logger = LogProvider.Factory.CreateLogger<NinaScalarClient>();
-  private readonly HttpClient _http;
-  private readonly bool _dryRun;
+  private readonly HttpService _httpService;
 
-  public NinaScalarClient(NinaOptions options, bool dryRun, HttpMessageHandler? handler = null)
+  public NinaScalarClient(HttpService httpService)
   {
-    _dryRun = dryRun;
-
-    _http = handler == null
-        ? new HttpClient()
-        : new HttpClient(handler);
-
-    _http.BaseAddress = new Uri(options.BaseUrl);
-
-    if (!string.IsNullOrWhiteSpace(options.ApiKey))
-      _http.DefaultRequestHeaders.Add("X-Api-Key", options.ApiKey);
+    _httpService = httpService;
   }
 
   public async Task<EquipmentInfoEnvelope> GetEquipmentInfoAsync()
   {
     try
-    {
-      var req = new HttpRequestMessage(HttpMethod.Get, INinaClient.API_EQUIPMENT_INFO)
-      {
-        Content = new StringContent("{}", Encoding.UTF8, "application/json")
-      };
-
-      _logger.Log(LogLevel.Debug, $"=== REQUEST ===\nBaseAddress: {_http.BaseAddress
-        }\nRequestUri: {req.RequestUri
-        }\nHeaders:\n{req.Headers
-        }\nContent Headers:\n{req.Content.Headers
-        }\nBody:\n{await req.Content.ReadAsStringAsync()
-        }");
-
-      var resp = await _http.SendAsync(req);
-      resp.EnsureSuccessStatusCode();
-
+    {     
+      var resp = await _httpService.Call(HttpMethod.Get, INinaClient.API_EQUIPMENT_INFO);           
       var json = await resp.Content.ReadAsStringAsync();
-
-      _logger.Log(LogLevel.Debug, $"=== RESPONSE ===\nStatus: {resp.StatusCode
-        }\nReason: {resp.ReasonPhrase
-        }\nResponse Headers:\n{resp.Headers
-        }\nResponse Body:\n{await resp.Content.ReadAsStringAsync()
-        }");
 
       return JsonSerializer.Deserialize<EquipmentInfoEnvelope>(json)!;
     }
@@ -65,12 +34,32 @@ public class NinaScalarClient : INinaClient
     }
   }
 
-  public Task StopSequenceAsync() => Call(HttpMethod.Get, INinaClient.API_STOP_SEQUENCE);
-  public Task ParkMountAsync() => Call(HttpMethod.Get, INinaClient.API_PARK_MOUNT);
-  public Task WarmCameraAsync() => Call(HttpMethod.Get, INinaClient.API_WARM_CAMERA);
-  public Task CloseDomeAsync() => Call(HttpMethod.Get, INinaClient.API_CLOSE_DOME);
+  public async Task<bool> IsNinaRunningAsync()
+  {
+    try
+    {
+      await _httpService.Call(HttpMethod.Get, INinaClient.API_VERSION);
+      return true;
+    }
+    catch (Exception ex)
+    {
+      _logger.LogWarning(ex, "Failed to get NINA version - assuming NINA is not running!");
+      return false;
+    }
+  }
+
+  public Task StopSequenceAsync() => _httpService.Call(HttpMethod.Get, INinaClient.API_STOP_SEQUENCE);
+  public Task ParkMountAsync() => _httpService.Call(HttpMethod.Get, INinaClient.API_PARK_MOUNT);
+  public Task WarmCameraAsync() => _httpService.Call(HttpMethod.Get, INinaClient.API_WARM_CAMERA);
+  public Task CloseDomeAsync() => _httpService.Call(HttpMethod.Get, INinaClient.API_CLOSE_DOME);
   public async Task ExecuteShutdownAsync(ShutdownCommand cmd)
   {
+    var isNinaRunning = await IsNinaRunningAsync();
+    if (!isNinaRunning) {
+      _logger.LogWarning("NINA is not running. Shutdown not neccesary!");
+      return;
+    }
+
     _logger.LogInformation("Starting shutdown...");
 
     if (cmd.StopSequence)
@@ -115,19 +104,19 @@ public class NinaScalarClient : INinaClient
   private async Task<bool> IsMountParkedAsync()
   {
     var m = (await GetEquipmentInfoAsync()).Response?.Mount;
-    return m != null && m.AtPark && !m.Slewing && !m.TrackingEnabled;
+    return m != null && (!m.Connected || (m.AtPark && !m.Slewing && !m.TrackingEnabled));
   }
 
   private async Task<bool> IsDomeClosedAsync()
   {
     var d = (await GetEquipmentInfoAsync()).Response?.Dome;
-    return d != null && d.ShutterStatus == "ShutterClosed";
+    return d != null && (!d.Connected || d.ShutterStatus == "ShutterClosed");
   }
 
   private async Task<bool> IsCameraWarmingAsync()
   {
     var c = (await GetEquipmentInfoAsync()).Response?.Camera;
-    return c != null && !c.CoolerOn;
+    return c != null && (!c.Connected || !c.CoolerOn);
   }
 
   private async Task<bool> IsSequenceRunningAsync()
@@ -136,45 +125,6 @@ public class NinaScalarClient : INinaClient
     return s?.IsRunning ?? false;
   }
 
-  private async Task Call(HttpMethod method, string path)
-  {
-    if (_dryRun)
-    {
-      Console.WriteLine($"[DRY-RUN] Would POST {path}");
-      return;
-    }
-
-    try
-    {
-      var req = new HttpRequestMessage(method, path)      
-      {
-        Content = new StringContent("{}", Encoding.UTF8, "application/json")
-      };
-
-      _logger.Log(LogLevel.Debug, $"=== REQUEST ===\nBaseAddress: {_http.BaseAddress
-        }\nRequestUri: {req.RequestUri
-        }\nHeaders:\n{req.Headers
-        }\nContent Headers:\n{req.Content.Headers
-        }\nBody:\n{await req.Content.ReadAsStringAsync()
-        }");
-
-      var resp = await _http.SendAsync(req);
-      resp.EnsureSuccessStatusCode();
-
-      var requestContent = await resp.Content.ReadAsStringAsync();
-
-      _logger.Log(LogLevel.Debug, $"=== RESPONSE ===\nStatus: {resp.StatusCode
-        }\nReason: {resp.ReasonPhrase
-        }\nResponse Headers:\n{resp.Headers
-        }\nResponse Body:\n{requestContent}");
-      
-    }
-    catch (Exception ex)
-    {
-      _logger.LogError(ex, $"Error {method.ToString()} to base:{_http.BaseAddress} path:{path}: {ex.Message}");
-      throw;
-    }
-  }
   private async Task WaitUntil(Func<Task<bool>> condition, string failureMessage, int pollingDelay = 1000, int timeoutSeconds = 60)
   {
     var start = DateTime.UtcNow;

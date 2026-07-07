@@ -64,10 +64,19 @@ static class Program
           
           services.AddSingleton<ShutdownOrchestrator>();
 
+          services.AddSingleton<HttpService>(s =>
+          {
+            var ninaOpts = s.GetRequiredService<IOptions<NinaOptions>>().Value;
+            var baseUrl = ninaOpts.BaseUrl;
+            var apiKey = ninaOpts.ApiKey;
+
+            return new HttpService(baseUrl, apiKey);
+          });
+          
           services.AddSingleton<INinaClient>(sp =>
           {
-            var ninaOpts = sp.GetRequiredService<IOptions<NinaOptions>>().Value;
-            return new NinaScalarClient(ninaOpts, dryRun);
+            var httpService = sp.GetRequiredService<HttpService>();
+            return new NinaScalarClient(httpService);
           });
 
           services.AddSingleton<IPowerStatusProvider>(psp => {

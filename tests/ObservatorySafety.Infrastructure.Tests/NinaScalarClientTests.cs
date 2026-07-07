@@ -1,4 +1,5 @@
-﻿using ObservatorySafety.Infrastructure.Tests.Mock;
+﻿using ObservatorySafety.Core;
+using ObservatorySafety.Infrastructure.Tests.Mock;
 
 namespace ObservatorySafety.Infrastructure.Tests;
 
@@ -9,8 +10,8 @@ public class NinaScalarClientTests
   public async Task CallsCorrectEndpoints_ForShutdown()
   {
     var handler = new MockHttpMessageHandler();
-    var options = new NinaOptions { BaseUrl = "http://localhost:1888" };
-    var client = new NinaScalarClient(options, false, handler);
+    var httpService = new HttpService("http://localhost:1888", null, handler);
+    var client = new NinaScalarClient(httpService);
 
     await client.StopSequenceAsync();
     await client.ParkMountAsync();
@@ -29,8 +30,8 @@ public class NinaScalarClientTests
   public void ThrowsOnNonSuccessStatusCode()
   {
     var handler = new MockHttpMessageHandler { ResponseStatusCode = System.Net.HttpStatusCode.BadRequest };
-    var options = new NinaOptions { BaseUrl = "http://localhost:1888" };
-    var client = new NinaScalarClient(options, false, handler);
+    var httpService = new HttpService("http://localhost:1888", null, handler);
+    var client = new NinaScalarClient(httpService);
 
     Assert.ThrowsAsync<HttpRequestException>(() => client.StopSequenceAsync());
   }
