@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 
 using ObservatorySafety.Core;
 using ObservatorySafety.Infrastructure;
+using ObservatorySafety.Infrastructure.Simulation;
 using ObservatorySafety.Service;
 
 using Serilog;
@@ -76,14 +77,25 @@ static class Program
           
           services.AddSingleton<IAstronomyApplicationClient>(sp =>
           {
-            var httpService = sp.GetRequiredService<HttpService>();
+            if (dryRun)
+            {
+              return new SimulatedClient();
+            }
+            var httpService = sp.GetRequiredService<IHttpService>();
             var equipmentOptions = sp.GetRequiredService<IOptions<EquipmentOptions>>().Value;
 
             return new NinaScalarClient(httpService, equipmentOptions);
           });
 
           services.AddSingleton<IPowerStatusProvider>(psp => {
-            return new WmiPowerStatusProvider();
+            if (simulatePowerLoss)
+            {
+              return new SimulatedPowerLossPowerStatusProvider();
+            }
+            else
+            {
+              return new WmiPowerStatusProvider();
+            }
           });
 
           services.AddSingleton<PowerMonitorService>(pms => {
@@ -101,7 +113,7 @@ static class Program
             var orchestrator = sp.GetRequiredService<ShutdownOrchestrator>();
             var nina = sp.GetRequiredService<IAstronomyApplicationClient>();
 
-            return new SafetyService(watcher, orchestrator, nina, simulatePowerLoss);
+            return new SafetyService(watcher, orchestrator, nina);
           });
 
           

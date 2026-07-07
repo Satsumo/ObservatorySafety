@@ -2,7 +2,7 @@
   "profiles": {
     "NINA ObservatorySafety.Service": {
       "commandName": "Project",
-      "commandLineArgs": "\"--console\" \"--logging-minimumLevel=Debug\"",
+      "commandLineArgs": "\"--console\" \r\n\"--logging-minimumLevel=Debug\"",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
       },
@@ -10,7 +10,15 @@
     },
     "DRY-RUN ObservatorySafety.Service": {
       "commandName": "Project",
-      "commandLineArgs": "\"--console\" \"--dry-run\" \"--logging-minimumLevel=Debug\"",
+      "commandLineArgs": "\"--console\" \r\n\"--dry-run\" \r\n\"--logging-minimumLevel=Debug\"",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true
+    },
+    "SIMULATED ObservatorySafety.Service": {
+      "commandName": "Project",
+      "commandLineArgs": "\"--console\" \r\n\"--dry-run\" \r\n\"--simulate-power-loss\" \r\n\"--logging-minimumLevel=Debug\"",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
       },

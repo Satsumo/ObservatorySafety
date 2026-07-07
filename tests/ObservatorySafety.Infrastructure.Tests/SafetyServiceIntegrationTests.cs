@@ -3,7 +3,7 @@
 using Moq;
 
 using ObservatorySafety.Core;
-using ObservatorySafety.Infrastructure.Tests.Mock;
+using ObservatorySafety.Infrastructure.Simulation;
 using ObservatorySafety.Service;
 
 namespace ObservatorySafety.Infrastructure.Tests;
@@ -43,27 +43,13 @@ public class SafetyServiceIntegrationTests
       PowerOutageConfirmedThresholdSeconds = 1
     };
 
-    var mockPowerStatusProvider = new Mock<IPowerStatusProvider>();
-    
-    var callCount = 0;
-    mockPowerStatusProvider
-        .Setup(p => p.GetPowerStatus())
-        .Returns(() =>
-        {
-          callCount++;
-          
-          var powerStatus = callCount == 1 ? PowerStatus.Online : PowerStatus.OnBattery;
-          _logger.LogInformation("GetPowerStatus called {CallCount} times. Status is {powerStatus}", callCount, powerStatus);
-          
-          return powerStatus;
-        });
-
-    var watcher = new PowerMonitorService(mockPowerStatusProvider.Object, TimeSpan.FromSeconds(safetyOpts.PowerOutageConfirmedThresholdSeconds));
+    var mockPowerStatusProvider = new SimulatedPowerLossPowerStatusProvider();
+    var watcher = new PowerMonitorService(mockPowerStatusProvider, TimeSpan.FromSeconds(safetyOpts.PowerOutageConfirmedThresholdSeconds));
     var orchestrator = new ShutdownOrchestrator();
-    var nina = new MockNinaClient();
+    var nina = new SimulatedClient();
 
     // IMPORTANT: disable auto-start
-    var service = new SafetyService(watcher, orchestrator, nina, false);
+    var service = new SafetyService(watcher, orchestrator, nina);
 
     // Start the background service
     await watcher.StartAsync(CancellationToken.None);

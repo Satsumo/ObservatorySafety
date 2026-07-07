@@ -14,6 +14,7 @@ namespace ObservatorySafety.Infrastructure
     /// Reads UPS / AC status using WMI (Win32_Battery).
     /// This works for Eaton UPS and any HID‑compliant UPS.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
     public PowerStatus GetPowerStatus()
     {
       try  /// <summary>
@@ -23,6 +24,9 @@ namespace ObservatorySafety.Infrastructure
 
         foreach (var battery in searcher.Get())
         {
+          if (battery["BatteryStatus"] == null)
+            continue;
+
           var status = (UInt16) battery["BatteryStatus"];
 
           // BatteryStatus values:

@@ -1,14 +1,18 @@
-﻿using ObservatorySafety.Core;
+﻿using Microsoft.Extensions.Logging;
+
+using ObservatorySafety.Core;
 using ObservatorySafety.Core.Model;
 
-namespace ObservatorySafety.Infrastructure.Tests.Mock;
+namespace ObservatorySafety.Infrastructure.Simulation;
 
 /// <summary>
 /// A deterministic mock of INinaClient for integration testing.
 /// Tracks all calls and never touches real hardware or HTTP.
 /// </summary>
-public class MockNinaClient : IAstronomyApplicationClient
+public class SimulatedClient : IAstronomyApplicationClient
 {
+  private readonly ILogger<SimulatedClient> _logger = LogProvider.Factory.CreateLogger<SimulatedClient>();
+
   public int IsNinaRunningCount { get; private set; }
   public int GetMountInfoCount { get; private set; }
   public int StopSequenceCount { get; private set; }
@@ -21,14 +25,14 @@ public class MockNinaClient : IAstronomyApplicationClient
   public Task<bool> IsNinaRunningAsync()
   {
     IsNinaRunningCount++;
-    CallLog.Add("IsNinaRunning");
+    AddCallLog("IsNinaRunning");
     return Task.FromResult(true);
   }
 
   public Task<EquipmentInfoEnvelope> GetEquipmentInfoAsync()
   {
     GetMountInfoCount++;
-    CallLog.Add("GetMountInfo");
+    AddCallLog("GetMountInfo");
     var envelope = new EquipmentInfoEnvelope
     {
       Response = new EquipmentInfo
@@ -50,36 +54,48 @@ public class MockNinaClient : IAstronomyApplicationClient
   public Task StopSequenceAsync()
   {
     StopSequenceCount++;
-    CallLog.Add("StopSequence");
+    AddCallLog("StopSequence");
     return Task.CompletedTask;
   }
 
   public Task ParkMountAsync()
   {
     ParkCount++;
-    CallLog.Add("ParkMount");
+    AddCallLog("ParkMount");
     return Task.CompletedTask;
   }
 
   public Task WarmCameraAsync()
   {
     WarmCount++;
-    CallLog.Add("WarmCamera");
+    AddCallLog("WarmCamera");
     return Task.CompletedTask;
   }
 
   public Task CloseDomeAsync()
   {
     CloseCount++;
-    CallLog.Add("CloseDome");
+    AddCallLog("CloseDome");
     return Task.CompletedTask;
   }
 
   public async Task ExecuteShutdownAsync(ShutdownCommand cmd)
   {
+    _logger.LogInformation("Starting shutdown...");
+
     if (cmd.StopSequence) await StopSequenceAsync();
     if (cmd.ParkMount) await ParkMountAsync();
     if (cmd.WarmCamera) await WarmCameraAsync();
     if (cmd.CloseDome) await CloseDomeAsync();
+
+    _logger.LogInformation("Shutdown complete.");
+
+  }
+
+  private List<string> AddCallLog(string callLogEntry)
+  {
+    CallLog.Add(callLogEntry);
+    _logger.LogInformation("DryRunClient: {CallLogEntry}", callLogEntry);
+    return CallLog;
   }
 }
