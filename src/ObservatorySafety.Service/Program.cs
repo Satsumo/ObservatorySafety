@@ -1,3 +1,5 @@
+using System.Reflection;
+
 using Microsoft.Extensions.Options;
 
 using ObservatorySafety.Core;
@@ -38,7 +40,9 @@ static class Program
           }
           else
           {
-            cfg.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            var assembly = Assembly.GetExecutingAssembly();
+            using var stream = assembly.GetManifestResourceStream("ObservatorySafety.Service.appsettings.json");
+            cfg.AddJsonStream(stream);
           }
 
         })
