@@ -5,12 +5,21 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
+    <!-- Disable implicit content items so we can explicitly include appsettings.json -->
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
+
     <!-- Single-file EXE publishing -->
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+
+    <!-- Required for Windows Services and native dependencies -->
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+
+    <!-- Avoid trimming because it breaks reflection and config loading -->
     <PublishTrimmed>false</PublishTrimmed>
+
+    <!-- Optional: reduces globalization footprint -->
     <InvariantGlobalization>true</InvariantGlobalization>
 
     <UserSecretsId>dotnet-ObservatorySafety.Service-47723827-7900-4adb-b7fb-cb7f96af3877</UserSecretsId>
@@ -34,8 +43,11 @@
     <ProjectReference Include="..\ObservatorySafety.Core\ObservatorySafety.Core.csproj" />
   </ItemGroup>
 
+  <!-- Explicitly include appsettings.json -->
   <ItemGroup>
-    <EmbeddedResource Include="appsettings.json" />
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

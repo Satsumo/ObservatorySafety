@@ -76,11 +76,13 @@ jobs:
       env:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
 
-    - name: Upload signed EXE artifact
+    - name: Upload signed EXE + JSON artifact
       uses: actions/upload-artifact@v4
       with:
         name: ObservatorySafety-Service
-        path: publish/ObservatorySafety.Service.exe
+        path: |
+          publish/ObservatorySafety.Service.exe
+          publish/appsettings.json
 
   release:
     needs: build
@@ -98,6 +100,8 @@ jobs:
       with:
         tag_name: v1.0.${{ github.run_number }}
         name: ObservatorySafety v1.0.${{ github.run_number }}
-        files: ./release/ObservatorySafety.Service.exe
+        files: |
+          ./release/ObservatorySafety.Service.exe
+          ./release/appsettings.json
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

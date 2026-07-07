@@ -9,6 +9,7 @@ using ObservatorySafety.Service;
 
 using Serilog;
 using Serilog.Events;
+using Serilog.Settings.Configuration;
 
 static class Program
 {
@@ -34,36 +35,35 @@ static class Program
     var builder = Host.CreateDefaultBuilder(args)
         .ConfigureAppConfiguration((ctx, cfg) =>
         {
-          // Remove default JSON loading (critical!)
-          cfg.Sources.Clear();
-
           if (!string.IsNullOrWhiteSpace(configPath))
           {
             cfg.AddJsonFile(configPath, optional: false, reloadOnChange: true);
           }
           else
           {
-            var assembly = Assembly.GetExecutingAssembly();
-            using var stream = assembly.GetManifestResourceStream("ObservatorySafety.Service.appsettings.json");
-            cfg.AddJsonStream(stream);
+            cfg.AddJsonFile("appsettings.json", optional: false);
           }
 
         })
         .UseSerilog((ctx, services, loggerConfig) =>
         {
-          loggerConfig
-                  .ReadFrom.Configuration(ctx.Configuration)
-                  .ReadFrom.Services(services);
+          var options = new ConfigurationReaderOptions(
+              typeof(ConsoleLoggerConfigurationExtensions).Assembly,
+              typeof(FileLoggerConfigurationExtensions).Assembly
+          );
 
-          // Look for debug logging level
+          loggerConfig
+              .ReadFrom.Configuration(ctx.Configuration, options)
+              .ReadFrom.Services(services);
+
+          // Your logging-minimumLevel override stays the same
           var arg = args.FirstOrDefault(a => a.StartsWith(ARG_LOGGING_LEVEL, StringComparison.OrdinalIgnoreCase));
           if (arg != null)
           {
-            var levelText = arg.Split('=', 2)[1]; // get the value
+            var levelText = arg.Split('=', 2)[1];
             var level = Enum.Parse<LogEventLevel>(levelText, ignoreCase: true);
             loggerConfig.MinimumLevel.Is(level);
           }
-
         })
         .ConfigureServices((ctx, services) =>
         {
