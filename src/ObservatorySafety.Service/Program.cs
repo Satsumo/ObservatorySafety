@@ -34,6 +34,9 @@ static class Program
     var builder = Host.CreateDefaultBuilder(args)
         .ConfigureAppConfiguration((ctx, cfg) =>
         {
+          // Remove default JSON loading (critical!)
+          cfg.Sources.Clear();
+
           if (!string.IsNullOrWhiteSpace(configPath))
           {
             cfg.AddJsonFile(configPath, optional: false, reloadOnChange: true);
