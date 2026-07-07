@@ -63,4 +63,41 @@ jobs:
             exit 1
         }
 
-        Write-Host "Using
+        Write-Host "Using signtool at: $($signtool.FullName)"
+
+        & $signtool.FullName sign `
+          /f cert.pfx `
+          /p $env:SIGNING_CERT_PASSWORD `
+          /tr http://timestamp.digicert.com `
+          /td sha256 `
+          /fd sha256 `
+          publish/ObservatorySafety.Service.exe
+      shell: powershell
+      env:
+        SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+
+    - name: Upload signed EXE artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ObservatorySafety-Service
+        path: publish/ObservatorySafety.Service.exe
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ObservatorySafety-Service
+        path: ./release
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: ObservatorySafety v1.0.${{ github.run_number }}
+        files: ./release/ObservatorySafety.Service.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
