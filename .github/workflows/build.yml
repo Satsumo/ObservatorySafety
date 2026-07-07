@@ -1,4 +1,4 @@
-name: Build and Publish ObservatorySafety EXE
+name: Build, Sign, and Publish ObservatorySafety EXE
 
 on:
   push:
@@ -37,7 +37,34 @@ jobs:
            /p:PublishTrimmed=false `
            --output ./publish
 
-    - name: Upload EXE artifact
+    # ============================
+    # Decode Base64 PFX certificate
+    # ============================
+    - name: Decode PFX certificate
+      run: |
+        echo "$env:SIGNING_CERT" | Out-File cert.b64
+        certutil -decode cert.b64 cert.pfx
+      shell: powershell
+      env:
+        SIGNING_CERT: ${{ secrets.SIGNING_CERT }}
+
+    # ============================
+    # Sign the EXE using signtool
+    # ============================
+    - name: Sign EXE
+      run: |
+        signtool sign `
+          /f cert.pfx `
+          /p $env:SIGNING_CERT_PASSWORD `
+          /tr http://timestamp.digicert.com `
+          /td sha256 `
+          /fd sha256 `
+          publish/ObservatorySafety.Service.exe
+      shell: powershell
+      env:
+        SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+
+    - name: Upload signed EXE artifact
       uses: actions/upload-artifact@v4
       with:
         name: ObservatorySafety-Service
