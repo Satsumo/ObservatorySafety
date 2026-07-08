@@ -53,41 +53,42 @@ static class Program
     }
 
     builder
-    .ConfigureAppConfiguration((ctx, cfg) =>
-    {
-      Console.WriteLine("Configuring app configuration…");
+        .ConfigureAppConfiguration((ctx, cfg) =>
+        {
+          Console.WriteLine("Configuring app configuration…");
 
-      if (!string.IsNullOrWhiteSpace(configPath))
-      {
-        cfg.AddJsonFile(configPath, optional: false, reloadOnChange: true);
-      }
-      else
-      {
-        cfg.AddJsonFile("appsettings.json", optional: false);
-      }
-    })
-    .UseSerilog((ctx, services, loggerConfig) =>
-    {
-      Console.WriteLine("Configuring Serilog…");
+          if (!string.IsNullOrWhiteSpace(configPath))
+          {
+            cfg.AddJsonFile(configPath, optional: false, reloadOnChange: true);
+          }
+          else
+          {
+            cfg.AddJsonFile("appsettings.json", optional: false);
+          }
+        })
+        .UseSerilog((ctx, services, loggerConfig) =>
+        {
+          Console.WriteLine("Configuring Serilog…");
 
-      loggerConfig
-          .MinimumLevel.Debug()
-          .WriteTo.File(
-              path: @"C:\Tools\ObservatorySafety\logs\observatory.log",
-              rollingInterval: RollingInterval.Day,
-              retainedFileCountLimit: 10,
-              shared: true);
+          var options = new ConfigurationReaderOptions(
+                  typeof(ConsoleLoggerConfigurationExtensions).Assembly,
+                  typeof(FileLoggerConfigurationExtensions).Assembly
+              );
 
-      var arg = args.FirstOrDefault(a => a.StartsWith(ARG_LOGGING_LEVEL, StringComparison.OrdinalIgnoreCase));
-      if (arg != null)
-      {
-        var levelText = arg.Split('=', 2)[1];
-        var level = Enum.Parse<LogEventLevel>(levelText, ignoreCase: true);
-        loggerConfig.MinimumLevel.Is(level);
+          loggerConfig
+                  .ReadFrom.Configuration(ctx.Configuration, options)
+                  .ReadFrom.Services(services);
 
-        Console.WriteLine($"Minimum logging level overridden to: {level}");
-      }
-    })
+          var arg = args.FirstOrDefault(a => a.StartsWith(ARG_LOGGING_LEVEL, StringComparison.OrdinalIgnoreCase));
+          if (arg != null)
+          {
+            var levelText = arg.Split('=', 2)[1];
+            var level = Enum.Parse<LogEventLevel>(levelText, ignoreCase: true);
+            loggerConfig.MinimumLevel.Is(level);
+
+            Console.WriteLine($"Minimum logging level overridden to: {level}");
+          }
+        })
         .ConfigureServices((ctx, services) =>
         {
           Console.WriteLine("Configuring services…");
