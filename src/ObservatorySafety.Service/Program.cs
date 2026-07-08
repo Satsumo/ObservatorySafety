@@ -129,7 +129,7 @@ static class Program
 
     if (!runAsConsole)
     {
-      builder.UseWindowsService();
+      builder = builder.UseWindowsService();
     }
 
     var host = builder.Build();
