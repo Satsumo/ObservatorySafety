@@ -1,3 +1,5 @@
+using System.Reflection;
+
 using Microsoft.Extensions.Options;
 
 using ObservatorySafety.Core;
@@ -41,7 +43,16 @@ static class Program
       Console.WriteLine("Using default config path: appsettings.json");
     }
 
-    var builder = Host.CreateDefaultBuilder(args)
+    var builder = Host.CreateDefaultBuilder(args);
+
+    // CRITICAL: Apply Windows Service hosting BEFORE configuring services
+    if (!runAsConsole)
+    {
+      Console.WriteLine("Configuring Windows Service hosting…");
+      builder = builder.UseWindowsService();
+    }
+
+    builder
         .ConfigureAppConfiguration((ctx, cfg) =>
         {
           Console.WriteLine("Configuring app configuration…");
@@ -156,31 +167,16 @@ static class Program
           });
         });
 
-    // CRITICAL: Apply Windows Service hosting BEFORE Build()
-    if (!runAsConsole)
-    {
-      Console.WriteLine("Configuring Windows Service hosting…");
-      builder = builder.UseWindowsService();
-    }
-
     Console.WriteLine("Building host…");
     var host = builder.Build();
-    Log.Information("Host built successfully.");
+    Console.WriteLine("Host built successfully.");
 
     // CRITICAL: Set LogProvider.Factory BEFORE hosted services start
     LogProvider.Factory = host.Services.GetRequiredService<ILoggerFactory>();
     Log.Information("LoggerFactory assigned to LogProvider.Factory.");
 
-
-    Console.CancelKeyPress += (_, e) =>
-    {
-      e.Cancel = true;
-      Console.WriteLine("Ctrl+C received, shutting down…");
-      host.StopAsync().Wait();
-    };
-
-    // Capture the logger factory AFTER the host is built
-    Log.Information($"Starting ObservatorySafety.Service with args:\n{String.Join("\n", args)}");
+    // Guaranteed startup log (creates the log file)
+    Log.Information("ObservatorySafety.Service starting. Args:\n{Args}", String.Join("\n", args));
 
     Console.WriteLine("Starting host.RunAsync()…");
 
