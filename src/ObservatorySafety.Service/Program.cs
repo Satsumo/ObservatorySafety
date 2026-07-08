@@ -165,7 +165,12 @@ static class Program
 
     Console.WriteLine("Building host…");
     var host = builder.Build();
-    Console.WriteLine("Host built successfully.");
+    Log.Information("Host built successfully.");
+
+    // CRITICAL: Set LogProvider.Factory BEFORE hosted services start
+    LogProvider.Factory = host.Services.GetRequiredService<ILoggerFactory>();
+    Log.Information("LoggerFactory assigned to LogProvider.Factory.");
+
 
     Console.CancelKeyPress += (_, e) =>
     {
@@ -175,12 +180,7 @@ static class Program
     };
 
     // Capture the logger factory AFTER the host is built
-    LogProvider.Factory = host.Services.GetRequiredService<ILoggerFactory>();
-
-    LogProvider.Factory.CreateLogger<SafetyService>().Log(
-        LogLevel.Information,
-        $"Starting ObservatorySafety.Service with args:\n{String.Join("\n", args)}"
-    );
+    Log.Information($"Starting ObservatorySafety.Service with args:\n{String.Join("\n", args)}");
 
     Console.WriteLine("Starting host.RunAsync()…");
 
