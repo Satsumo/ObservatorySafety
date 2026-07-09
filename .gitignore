@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/src/ObservatorySafety.Watchdog/appsettings.Development.json
+/src/ObservatorySafety.Watchdog/appsettings.Production.json
