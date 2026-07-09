@@ -2,7 +2,7 @@
 
 public class PowerMonitorService : BackgroundService
 {
-  private readonly ILogger<PowerMonitorService> _logger = LogProvider.Factory.CreateLogger<PowerMonitorService>();
+  private readonly ILogger<PowerMonitorService> _logger = LogProvider.Factory!.CreateLogger<PowerMonitorService>();
   private readonly IPowerStatusProvider _powerStatusProvider;
   private readonly TimeSpan _powerlossConfirmedThreshold;
 

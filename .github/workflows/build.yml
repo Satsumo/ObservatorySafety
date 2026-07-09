@@ -1,4 +1,4 @@
-name: Build, Sign, and Publish ObservatorySafety EXE
+name: Build, Sign, and Publish ObservatorySafety EXEs
 
 on:
   push:
@@ -21,13 +21,26 @@ jobs:
       with:
         dotnet-version: '9.0.x'
 
+    # ============================
+    # Restore dependencies
+    # ============================
     - name: Restore dependencies
-      run: dotnet restore src/ObservatorySafety.Service/ObservatorySafety.Service.csproj
+      run: |
+        dotnet restore src/ObservatorySafety.Service/ObservatorySafety.Service.csproj
+        dotnet restore src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj
 
-    - name: Build
-      run: dotnet build src/ObservatorySafety.Service/ObservatorySafety.Service.csproj --configuration Release
+    # ============================
+    # Build both projects
+    # ============================
+    - name: Build Service + Watchdog
+      run: |
+        dotnet build src/ObservatorySafety.Service/ObservatorySafety.Service.csproj --configuration Release
+        dotnet build src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj --configuration Release
 
-    - name: Publish single-file EXE
+    # ============================
+    # Publish both EXEs
+    # ============================
+    - name: Publish Service EXE
       run: dotnet publish src/ObservatorySafety.Service/ObservatorySafety.Service.csproj `
            --configuration Release `
            --runtime win-x64 `
@@ -35,7 +48,17 @@ jobs:
            /p:PublishSingleFile=true `
            /p:IncludeNativeLibrariesForSelfExtract=true `
            /p:PublishTrimmed=false `
-           --output ./publish
+           --output ./publish/service
+
+    - name: Publish Watchdog EXE
+      run: dotnet publish src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj `
+           --configuration Release `
+           --runtime win-x64 `
+           --self-contained true `
+           /p:PublishSingleFile=true `
+           /p:IncludeNativeLibrariesForSelfExtract=true `
+           /p:PublishTrimmed=false `
+           --output ./publish/watchdog
 
     # ============================
     # Decode Base64 PFX certificate
@@ -49,9 +72,9 @@ jobs:
         SIGNING_CERT: ${{ secrets.SIGNING_CERT }}
 
     # ============================
-    # Sign the EXE using signtool
+    # Sign both EXEs
     # ============================
-    - name: Sign EXE
+    - name: Sign EXEs
       run: |
         $kitPath = "C:\Program Files (x86)\Windows Kits\10\bin"
         $signtool = Get-ChildItem -Path $kitPath -Recurse -Filter signtool.exe |
@@ -71,18 +94,31 @@ jobs:
           /tr http://timestamp.digicert.com `
           /td sha256 `
           /fd sha256 `
-          publish/ObservatorySafety.Service.exe
+          publish/service/ObservatorySafety.Service.exe
+
+        & $signtool.FullName sign `
+          /f cert.pfx `
+          /p $env:SIGNING_CERT_PASSWORD `
+          /tr http://timestamp.digicert.com `
+          /td sha256 `
+          /fd sha256 `
+          publish/watchdog/ObservatorySafety.Watchdog.exe
       shell: powershell
       env:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
 
-    - name: Upload signed EXE + JSON artifact
+    # ============================
+    # Upload artifacts
+    # ============================
+    - name: Upload signed EXEs + JSONs
       uses: actions/upload-artifact@v4
       with:
-        name: ObservatorySafety-Service
+        name: ObservatorySafety-Binaries
         path: |
-          publish/ObservatorySafety.Service.exe
-          publish/appsettings.json
+          publish/service/ObservatorySafety.Service.exe
+          publish/service/appsettings.json
+          publish/watchdog/ObservatorySafety.Watchdog.exe
+          publish/watchdog/appsettings.json
 
   release:
     needs: build
@@ -92,7 +128,7 @@ jobs:
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
-        name: ObservatorySafety-Service
+        name: ObservatorySafety-Binaries
         path: ./release
 
     - name: Create GitHub Release
@@ -102,6 +138,8 @@ jobs:
         name: ObservatorySafety v1.0.${{ github.run_number }}
         files: |
           ./release/ObservatorySafety.Service.exe
+          ./release/appsettings.json
+          ./release/ObservatorySafety.Watchdog.exe
           ./release/appsettings.json
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

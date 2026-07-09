@@ -11,7 +11,7 @@ namespace ObservatorySafety.Infrastructure.Simulation;
 /// </summary>
 public class SimulatedClient : IAstronomyApplicationClient
 {
-  private readonly ILogger<SimulatedClient> _logger = LogProvider.Factory.CreateLogger<SimulatedClient>();
+  private readonly ILogger<SimulatedClient> _logger = LogProvider.Factory!.CreateLogger<SimulatedClient>();
 
   public int IsNinaRunningCount { get; private set; }
   public int GetMountInfoCount { get; private set; }

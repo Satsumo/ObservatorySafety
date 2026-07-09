@@ -6,7 +6,7 @@ namespace ObservatorySafety.Infrastructure.Simulation
 {
   public class SimulatedPowerLossPowerStatusProvider : IPowerStatusProvider
   {
-    private readonly ILogger<SimulatedPowerLossPowerStatusProvider> _logger = LogProvider.Factory.CreateLogger<SimulatedPowerLossPowerStatusProvider>();
+    private readonly ILogger<SimulatedPowerLossPowerStatusProvider> _logger = LogProvider.Factory!.CreateLogger<SimulatedPowerLossPowerStatusProvider>();
 
     private int _counter = 0;
 

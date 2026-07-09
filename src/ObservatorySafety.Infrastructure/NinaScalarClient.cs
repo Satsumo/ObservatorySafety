@@ -10,7 +10,7 @@ namespace ObservatorySafety.Infrastructure;
 
 public class NinaScalarClient : IAstronomyApplicationClient
 {
-  private readonly ILogger<NinaScalarClient> _logger = LogProvider.Factory.CreateLogger<NinaScalarClient>();
+  private readonly ILogger<NinaScalarClient> _logger = LogProvider.Factory!.CreateLogger<NinaScalarClient>();
   private readonly IHttpService _httpService;
   private readonly EquipmentOptions _equipmentOptions;
 

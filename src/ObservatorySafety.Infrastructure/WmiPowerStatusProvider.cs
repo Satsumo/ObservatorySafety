@@ -9,7 +9,7 @@ namespace ObservatorySafety.Infrastructure
 {
   public class WmiPowerStatusProvider : IPowerStatusProvider
   {
-    private readonly ILogger<WmiPowerStatusProvider> _logger = LogProvider.Factory.CreateLogger<WmiPowerStatusProvider>();
+    private readonly ILogger<WmiPowerStatusProvider> _logger = LogProvider.Factory!.CreateLogger<WmiPowerStatusProvider>();
 
     /// Reads UPS / AC status using WMI (Win32_Battery).
     /// This works for Eaton UPS and any HID‑compliant UPS.

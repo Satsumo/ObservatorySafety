@@ -4,7 +4,7 @@ namespace ObservatorySafety.Service;
 
 public class SafetyService : BackgroundService
 {
-  private readonly ILogger<SafetyService> _logger = LogProvider.Factory.CreateLogger<SafetyService>();
+  private readonly ILogger<SafetyService> _logger = LogProvider.Factory!.CreateLogger<SafetyService>();
 
   private readonly PowerMonitorService _watcher;
   private readonly ShutdownOrchestrator _orchestrator;
