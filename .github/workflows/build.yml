@@ -24,14 +24,15 @@ jobs:
     # ============================
     # Install WiX Toolset 3.14
     # ============================
-    - name: Install WiX Toolset 3.14
+    - name: Install WiX Toolset 3.14 (ZIP)
       shell: pwsh
       run: |
-        Invoke-WebRequest -Uri https://wixtoolset.org/releases/v3-14-0-6526/wix314.exe -OutFile wix314.exe
-        Start-Process wix314.exe -ArgumentList "/quiet" -Wait
+        Invoke-WebRequest -Uri https://wixtoolset.org/releases/v3-14-0-6526/wix314.zip -OutFile wix.zip
+        Expand-Archive wix.zip -DestinationPath wix -Force
 
         # Add WiX tools to PATH
-        echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" >> $env:GITHUB_PATH
+        echo "${{ github.workspace }}\wix\bin" >> $env:GITHUB_PATH
+
 
     # ============================
     # Restore dependencies
