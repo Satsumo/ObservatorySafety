@@ -139,7 +139,7 @@ public class NinaScalarClientTests
         await _client.ExecuteShutdownAsync(new ShutdownCommand(true, true, true, true))
     );
 
-    Assert.That(ex.Message, Is.EqualTo("Mount did not park or it is still slewing/tracking"));
+    Assert.That(ex.Message, Is.EqualTo("MOUNT PARK FAILURE: Mount did not park or it is still slewing/tracking"));
 
     _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_VERSION), Times.Exactly(1));
     _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_STOP_SEQUENCE), Times.Exactly(1));

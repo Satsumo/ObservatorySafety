@@ -21,7 +21,6 @@ public class SafetyService : BackgroundService
 
     _watcher.PowerLost += async (_, __) =>
     {
-      _logger.Log(LogLevel.Warning, "Power loss confirmed.");
       var cmd = _orchestrator.GetCommandFor(PowerStatus.OnBattery);
       if (cmd != null)
       {

@@ -72,7 +72,7 @@ public class PowerMonitorService : BackgroundService
       await Task.Delay(TimeSpan.FromSeconds(1), token);
     }
 
-    _logger.LogWarning("Power loss confirmed after {Seconds} seconds.", _powerlossConfirmedThreshold.TotalSeconds);
+    _logger.LogWarning("POWER LOSS CONFIRMED (after {Seconds} seconds).", _powerlossConfirmedThreshold.TotalSeconds);
     return true;
   }
 

@@ -1,65 +1,137 @@
-using System;
-using System.IO;
 using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Configuration;
-using Serilog;
-using ObservatorySafety.Watchdog.Services;
+
+using ObservatorySafety.Core;
 using ObservatorySafety.Watchdog.Alerts;
 using ObservatorySafety.Watchdog.Infrastructure;
+using ObservatorySafety.Watchdog.Services;
+
+using Serilog;
+using Serilog.Settings.Configuration;
 
 namespace ObservatorySafety.Watchdog
 {
-    public class Program
+  public class Program
+  {
+    private static String ARG_CONSOLE = "--console";
+    private static String ARG_CONFIG = "--config";
+
+    public static async Task Main(string[] args)
     {
-        public static void Main(string[] args)
+      Console.WriteLine("Program.Main starting…");
+
+      bool runAsConsole = args.Contains(ARG_CONSOLE);
+
+      Console.WriteLine($"runAsConsole = {runAsConsole}");
+
+      string? configPath = null;
+      var configIndex = Array.IndexOf(args, ARG_CONFIG);
+      if (configIndex >= 0 && configIndex + 1 < args.Length)
+      {
+        configPath = args[configIndex + 1];
+        Console.WriteLine($"Using custom config path: {configPath}");
+      }
+      else
+      {
+        Console.WriteLine("Using default config path: appsettings.json");
+      }
+
+      var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+
+      try
+      {
+        Log.Information("Starting ObservatorySafety.Watchdog...");
+
+        var builder = Host.CreateDefaultBuilder(args)
+                          .UseConsoleLifetime();
+
+        // CRITICAL: Apply Windows Service hosting BEFORE configuring services
+        if (!runAsConsole)
         {
-            var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
-
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.File(Path.Combine(exeDir, "watchdog.log"), rollingInterval: RollingInterval.Day)
-                .CreateLogger();
-
-            try
-            {
-                Log.Information("Starting ObservatorySafety.Watchdog...");
-
-                var host = Host.CreateDefaultBuilder(args)
-                    .UseWindowsService()
-                    .UseSerilog()
-                    .ConfigureAppConfiguration((hostingContext, config) =>
-                    {
-                        config.SetBasePath(exeDir);
-                        config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-                    })
-                    .ConfigureServices((context, services) =>
-                    {
-                        var configuration = context.Configuration;
-
-                        services.AddSingleton<LogTailer>();
-
-                        services.AddSingleton<IAlertService, CompositeAlertService>();
-
-                        services.AddSingleton<PushoverAlertService>();
-                        services.AddSingleton<EmailAlertService>();
-                        services.AddSingleton<WhatsAppAlertService>();
-
-                        services.AddHostedService<WatchdogService>();
-                    })
-                    .Build();
-
-                host.Run();
-            }
-            catch (Exception ex)
-            {
-                Log.Fatal(ex, "ObservatorySafety.Watchdog terminated unexpectedly");
-            }
-            finally
-            {
-                Log.CloseAndFlush();
-            }
+          Console.WriteLine("Configuring Windows Service hosting…");
+          builder = builder.UseWindowsService();
         }
+
+        builder
+            .ConfigureAppConfiguration((ctx, cfg) =>
+            {
+              Console.WriteLine("Configuring app configuration…");
+              cfg.SetBasePath(exeDir);
+
+              if (!string.IsNullOrWhiteSpace(configPath))
+              {
+                cfg.AddJsonFile(configPath, optional: false, reloadOnChange: true);
+              }
+              else
+              {
+                cfg.AddJsonFile("appsettings.json", optional: false);
+                cfg.AddJsonFile($"appsettings.{ctx.HostingEnvironment.EnvironmentName}.json",
+                                optional: true,
+                                reloadOnChange: true);
+              }
+            })
+            .UseSerilog((ctx, services, loggerConfig) =>
+            {
+              Console.WriteLine("Configuring Serilog…");
+
+              var options = new ConfigurationReaderOptions(
+                      typeof(ConsoleLoggerConfigurationExtensions).Assembly,
+                      typeof(FileLoggerConfigurationExtensions).Assembly
+                  );
+
+              loggerConfig
+                      .ReadFrom.Configuration(ctx.Configuration, options)
+                      .ReadFrom.Services(services);
+
+
+            })
+            .ConfigureServices((context, services) =>
+            {
+              var configuration = context.Configuration;
+
+              services.AddSingleton<LogTailer>();
+
+              services.AddSingleton<PushoverAlertService>();
+              services.AddSingleton<EmailAlertService>();
+              services.AddSingleton<WhatsAppAlertService>();
+
+              services.AddSingleton<IAlertService>(sp =>
+              {
+                var config = sp.GetRequiredService<IConfiguration>();
+
+                var composite = new CompositeAlertService(config);
+
+                composite.AddAlertService("Pushover", sp.GetRequiredService<PushoverAlertService>());
+                composite.AddAlertService("Email", sp.GetRequiredService<EmailAlertService>());
+                composite.AddAlertService("WhatsApp", sp.GetRequiredService<WhatsAppAlertService>());
+
+                return composite;
+              });
+
+              services.AddHostedService<WatchdogService>();
+            });
+
+        Console.WriteLine("Building host…");
+        var host = builder.Build();
+        Console.WriteLine("Host built successfully.");
+
+        // CRITICAL: Set LogProvider.Factory BEFORE hosted services start
+        LogProvider.Factory = host.Services.GetRequiredService<ILoggerFactory>();
+        Log.Information("LoggerFactory assigned to LogProvider.Factory.");
+
+        // Guaranteed startup log (creates the log file)
+        Log.Information("ObservatorySafety.Watchdog starting. Args:\n{Args}", String.Join("\n", args));
+        await host.RunAsync();
+      }
+      catch (Exception ex)
+      {
+        Log.Fatal(ex, "Fatal startup exception in ObservatorySafety.Watchdog");
+        Console.WriteLine($"Fatal startup exception: {ex}");
+      }
+      finally
+      {
+        Log.CloseAndFlush();
+        Console.WriteLine("Host shutdown complete.");
+      }
     }
+  }
 }

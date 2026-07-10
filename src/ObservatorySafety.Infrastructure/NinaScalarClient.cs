@@ -58,7 +58,7 @@ public class NinaScalarClient : IAstronomyApplicationClient
   {
     var isNinaRunning = await IsNinaRunningAsync();
     if (!isNinaRunning) {
-      _logger.LogWarning("NINA is not running. Shutdown not neccesary!");
+      _logger.LogWarning("NINA ERROR: It is not responding.  Shutdown not possible/necessary.");
       return;
     }
 
@@ -78,7 +78,7 @@ public class NinaScalarClient : IAstronomyApplicationClient
       _logger.LogInformation("Parking mount...");
       await ParkMountAsync();
       await WaitUntil(async () => await IsMountParkedAsync(),
-          "Mount did not park or it is still slewing/tracking", _equipmentOptions.MountParkTimeThresholdSeconds);
+          "MOUNT PARK FAILURE: Mount did not park or it is still slewing/tracking", _equipmentOptions.MountParkTimeThresholdSeconds);
       _logger.LogInformation("Mount parked.");
     }
 
@@ -96,7 +96,7 @@ public class NinaScalarClient : IAstronomyApplicationClient
       _logger.LogInformation("Closing dome...");
       await CloseDomeAsync();
       await WaitUntil(async () => await IsDomeClosedAsync(),
-          "Dome did not close", _equipmentOptions.DomeCloseTimeThresholdSeconds);
+          "DOME CLOSE FAILURE", _equipmentOptions.DomeCloseTimeThresholdSeconds);
       _logger.LogInformation("Dome closed.");
     }
 

@@ -1,15 +1,14 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+
+using NUnit.Framework;
+
 using ObservatorySafety.Watchdog.Alerts;
-using Xunit;
 
 namespace ObservatorySafety.Watchdog.Tests
 {
     public class AlertServiceTests
     {
-        [Fact]
+        [Test]
         public async Task CompositeAlertService_CallsEnabledChannels()
         {
             var settings = new[]
@@ -27,13 +26,16 @@ namespace ObservatorySafety.Watchdog.Tests
             var email = new DummyChannel();
             var whatsapp = new DummyChannel();
 
-            var composite = new CompositeAlertService(configuration, pushover, email, whatsapp);
+            var composite = new CompositeAlertService(configuration);
+            composite.AddAlertService("Pushover", pushover);
+            composite.AddAlertService("Email", email);
+            composite.AddAlertService("WhatsApp", whatsapp);
 
             await composite.SendAlertAsync("Test", "Message", CancellationToken.None);
 
-            Assert.Equal(1, pushover.Count);
-            Assert.Equal(1, email.Count);
-            Assert.Equal(0, whatsapp.Count);
+            Assert.That(pushover.Count, Is.EqualTo(1));
+            Assert.That(email.Count, Is.EqualTo(1));
+            Assert.That(whatsapp.Count, Is.EqualTo(0));
         }
 
         private class DummyChannel : IAlertService
@@ -47,4 +49,5 @@ namespace ObservatorySafety.Watchdog.Tests
             }
         }
     }
+
 }
