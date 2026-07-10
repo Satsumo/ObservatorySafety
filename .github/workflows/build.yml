@@ -41,26 +41,32 @@ jobs:
     # Publish both EXEs
     # ============================
     - name: Publish Service EXE
-      run: dotnet publish src/ObservatorySafety.Service/ObservatorySafety.Service.csproj `
-           --configuration Release `
-           --runtime win-x64 `
-           --self-contained true `
-           /p:PublishSingleFile=true `
-           /p:IncludeNativeLibrariesForSelfExtract=true `
-           /p:PublishTrimmed=false `
-           /p:UseWindowsService=false `
-           --output ./publish/service
+      run: |
+        dotnet publish src/ObservatorySafety.Service/ObservatorySafety.Service.csproj `
+          --configuration Release `
+          --runtime win-x64 `
+          --self-contained true `
+          /p:PublishSingleFile=true `
+          /p:IncludeNativeLibrariesForSelfExtract=true `
+          /p:PublishTrimmed=false `
+          /p:UseWindowsService=false `
+          /p:UseAppHost=true `
+          --output ./publish/service
+      shell: pwsh
 
     - name: Publish Watchdog EXE
-      run: dotnet publish src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj `
-           --configuration Release `
-           --runtime win-x64 `
-           --self-contained true `
-           /p:PublishSingleFile=true `
-           /p:IncludeNativeLibrariesForSelfExtract=true `
-           /p:PublishTrimmed=false `
-           /p:UseWindowsService=false `
-           --output ./publish/watchdog
+      run: |
+        dotnet publish src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj `
+          --configuration Release `
+          --runtime win-x64 `
+          --self-contained true `
+          /p:PublishSingleFile=true `
+          /p:IncludeNativeLibrariesForSelfExtract=true `
+          /p:PublishTrimmed=false `
+          /p:UseWindowsService=false `
+          /p:UseAppHost=true `
+          --output ./publish/watchdog
+      shell: pwsh
 
     # ============================
     # Decode Base64 PFX certificate
@@ -69,7 +75,7 @@ jobs:
       run: |
         echo "$env:SIGNING_CERT" | Out-File cert.b64
         certutil -decode cert.b64 cert.pfx
-      shell: powershell
+      shell: pwsh
       env:
         SIGNING_CERT: ${{ secrets.SIGNING_CERT }}
 
@@ -105,7 +111,7 @@ jobs:
           /td sha256 `
           /fd sha256 `
           publish/watchdog/ObservatorySafety.Watchdog.exe
-      shell: powershell
+      shell: pwsh
       env:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
 
