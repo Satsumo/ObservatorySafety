@@ -38,44 +38,44 @@ jobs:
         dotnet build src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj --configuration Release
 
     # ============================
-    # Publish both EXEs
+    # Publish both EXEs (NO BACKTICKS)
     # ============================
     - name: Publish Service EXE
-      run: |
-        dotnet publish src/ObservatorySafety.Service/ObservatorySafety.Service.csproj `
-          --configuration Release `
-          --runtime win-x64 `
-          --self-contained true `
-          /p:PublishSingleFile=true `
-          /p:IncludeNativeLibrariesForSelfExtract=true `
-          /p:PublishTrimmed=false `
-          /p:UseWindowsService=false `
-          /p:UseAppHost=true `
-          --output ./publish/service
       shell: pwsh
+      run: >
+        dotnet publish src/ObservatorySafety.Service/ObservatorySafety.Service.csproj
+        --configuration Release
+        --runtime win-x64
+        --self-contained true
+        /p:PublishSingleFile=true
+        /p:IncludeNativeLibrariesForSelfExtract=true
+        /p:PublishTrimmed=false
+        /p:UseWindowsService=false
+        /p:UseAppHost=true
+        --output ./publish/service
 
     - name: Publish Watchdog EXE
-      run: |
-        dotnet publish src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj `
-          --configuration Release `
-          --runtime win-x64 `
-          --self-contained true `
-          /p:PublishSingleFile=true `
-          /p:IncludeNativeLibrariesForSelfExtract=true `
-          /p:PublishTrimmed=false `
-          /p:UseWindowsService=false `
-          /p:UseAppHost=true `
-          --output ./publish/watchdog
       shell: pwsh
+      run: >
+        dotnet publish src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj
+        --configuration Release
+        --runtime win-x64
+        --self-contained true
+        /p:PublishSingleFile=true
+        /p:IncludeNativeLibrariesForSelfExtract=true
+        /p:PublishTrimmed=false
+        /p:UseWindowsService=false
+        /p:UseAppHost=true
+        --output ./publish/watchdog
 
     # ============================
     # Decode Base64 PFX certificate
     # ============================
     - name: Decode PFX certificate
+      shell: pwsh
       run: |
         echo "$env:SIGNING_CERT" | Out-File cert.b64
         certutil -decode cert.b64 cert.pfx
-      shell: pwsh
       env:
         SIGNING_CERT: ${{ secrets.SIGNING_CERT }}
 
@@ -83,6 +83,7 @@ jobs:
     # Sign both EXEs
     # ============================
     - name: Sign EXEs
+      shell: pwsh
       run: |
         $kitPath = "C:\Program Files (x86)\Windows Kits\10\bin"
         $signtool = Get-ChildItem -Path $kitPath -Recurse -Filter signtool.exe |
@@ -111,7 +112,6 @@ jobs:
           /td sha256 `
           /fd sha256 `
           publish/watchdog/ObservatorySafety.Watchdog.exe
-      shell: pwsh
       env:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
 
