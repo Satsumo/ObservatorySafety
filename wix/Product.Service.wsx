@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="Observatory Safety Service" Language="1033"
+           Version="1.0.0.0" Manufacturer="Satwant"
+           UpgradeCode="A3F9C1E2-6B4D-4F8A-9C2E-1D7B3A9F4C21">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+
+    <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLDIR" Name="ObservatorySafety">
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <Feature Id="MainFeature" Title="Observatory Safety Service" Level="1">
+      <ComponentGroupRef Id="ServiceComponents" />
+    </Feature>
+  </Product>
+</Wix>
