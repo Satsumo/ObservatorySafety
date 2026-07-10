@@ -1,4 +1,4 @@
-name: Build, Sign, and Publish ObservatorySafety EXEs
+name: Build, Sign, and Publish ObservatorySafety EXEs + MSIs
 
 on:
   push:
@@ -22,6 +22,15 @@ jobs:
         dotnet-version: '9.0.x'
 
     # ============================
+    # Install WiX Toolset 5
+    # ============================
+    - name: Install WiX Toolset 5
+      shell: pwsh
+      run: |
+        dotnet tool install --global wix --version 5.0.0
+        echo "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
+
+    # ============================
     # Restore dependencies
     # ============================
     - name: Restore dependencies
@@ -38,7 +47,7 @@ jobs:
         dotnet build src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj --configuration Release
 
     # ============================
-    # Publish both EXEs (NO BACKTICKS)
+    # Publish both EXEs
     # ============================
     - name: Publish Service EXE
       shell: pwsh
@@ -116,9 +125,57 @@ jobs:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
 
     # ============================
+    # Generate MSI installers
+    # ============================
+    - name: Generate MSI installers
+      shell: pwsh
+      run: |
+        # Create WiX source files
+        New-Item -ItemType Directory -Path wix -Force | Out-Null
+
+        # SERVICE MSI
+        wix heat dir publish/service -gg -sreg -scom -sfrag -out wix/service.wxs
+        wix candle wix/service.wxs -o wix/service.wixobj
+        wix light wix/service.wixobj -o publish/ObservatorySafety.Service.msi
+
+        # WATCHDOG MSI
+        wix heat dir publish/watchdog -gg -sreg -scom -sfrag -out wix/watchdog.wxs
+        wix candle wix/watchdog.wxs -o wix/watchdog.wixobj
+        wix light wix/watchdog.wixobj -o publish/ObservatorySafety.Watchdog.msi
+
+    # ============================
+    # Sign MSIs
+    # ============================
+    - name: Sign MSIs
+      shell: pwsh
+      run: |
+        $kitPath = "C:\Program Files (x86)\Windows Kits\10\bin"
+        $signtool = Get-ChildItem -Path $kitPath -Recurse -Filter signtool.exe |
+                    Where-Object { $_.FullName -like "*x64*" } |
+                    Select-Object -First 1
+
+        & $signtool.FullName sign `
+          /f cert.pfx `
+          /p $env:SIGNING_CERT_PASSWORD `
+          /tr http://timestamp.digicert.com `
+          /td sha256 `
+          /fd sha256 `
+          publish/ObservatorySafety.Service.msi
+
+        & $signtool.FullName sign `
+          /f cert.pfx `
+          /p $env:SIGNING_CERT_PASSWORD `
+          /tr http://timestamp.digicert.com `
+          /td sha256 `
+          /fd sha256 `
+          publish/ObservatorySafety.Watchdog.msi
+      env:
+        SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+
+    # ============================
     # Upload artifacts
     # ============================
-    - name: Upload signed EXEs + JSONs
+    - name: Upload signed EXEs + JSONs + MSIs
       uses: actions/upload-artifact@v4
       with:
         name: ObservatorySafety-Binaries
@@ -127,6 +184,8 @@ jobs:
           publish/service/appsettings.json
           publish/watchdog/ObservatorySafety.Watchdog.exe
           publish/watchdog/appsettings.json
+          publish/ObservatorySafety.Service.msi
+          publish/ObservatorySafety.Watchdog.msi
 
   release:
     needs: build
@@ -149,5 +208,7 @@ jobs:
           ./release/service/appsettings.json
           ./release/watchdog/ObservatorySafety.Watchdog.exe
           ./release/watchdog/appsettings.json
+          ./release/ObservatorySafety.Service.msi
+          ./release/ObservatorySafety.Watchdog.msi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
