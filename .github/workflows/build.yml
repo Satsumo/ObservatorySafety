@@ -48,6 +48,7 @@ jobs:
            /p:PublishSingleFile=true `
            /p:IncludeNativeLibrariesForSelfExtract=true `
            /p:PublishTrimmed=false `
+           /p:UseWindowsService=false `
            --output ./publish/service
 
     - name: Publish Watchdog EXE
@@ -58,6 +59,7 @@ jobs:
            /p:PublishSingleFile=true `
            /p:IncludeNativeLibrariesForSelfExtract=true `
            /p:PublishTrimmed=false `
+           /p:UseWindowsService=false `
            --output ./publish/watchdog
 
     # ============================
