@@ -22,13 +22,16 @@ jobs:
         dotnet-version: '9.0.x'
 
     # ============================
-    # Install WiX Toolset 5
+    # Install WiX Toolset 3.14
     # ============================
-    - name: Install WiX Toolset 5
+    - name: Install WiX Toolset 3.14
       shell: pwsh
       run: |
-        dotnet tool install --global wix --version 5.0.0
-        echo "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
+        Invoke-WebRequest -Uri https://wixtoolset.org/releases/v3-14-0-6526/wix314.exe -OutFile wix314.exe
+        Start-Process wix314.exe -ArgumentList "/quiet" -Wait
+
+        # Add WiX tools to PATH
+        echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" >> $env:GITHUB_PATH
 
     # ============================
     # Restore dependencies
@@ -99,13 +102,6 @@ jobs:
                     Where-Object { $_.FullName -like "*x64*" } |
                     Select-Object -First 1
 
-        if (-not $signtool) {
-            Write-Error "signtool.exe not found on this runner."
-            exit 1
-        }
-
-        Write-Host "Using signtool at: $($signtool.FullName)"
-
         & $signtool.FullName sign `
           /f cert.pfx `
           /p $env:SIGNING_CERT_PASSWORD `
@@ -125,23 +121,22 @@ jobs:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
 
     # ============================
-    # Generate MSI installers
+    # Generate MSI installers (WiX v3)
     # ============================
     - name: Generate MSI installers
       shell: pwsh
       run: |
-        # Create WiX source files
         New-Item -ItemType Directory -Path wix -Force | Out-Null
 
         # SERVICE MSI
-        wix heat dir publish/service -gg -sreg -scom -sfrag -out wix/service.wxs
-        wix candle wix/service.wxs -o wix/service.wixobj
-        wix light wix/service.wixobj -o publish/ObservatorySafety.Service.msi
+        heat dir publish/service -gg -sreg -scom -sfrag -out wix/service.wxs
+        candle wix/service.wxs -o wix/service.wixobj
+        light wix/service.wixobj -o publish/ObservatorySafety.Service.msi
 
         # WATCHDOG MSI
-        wix heat dir publish/watchdog -gg -sreg -scom -sfrag -out wix/watchdog.wxs
-        wix candle wix/watchdog.wxs -o wix/watchdog.wixobj
-        wix light wix/watchdog.wixobj -o publish/ObservatorySafety.Watchdog.msi
+        heat dir publish/watchdog -gg -sreg -scom -sfrag -out wix/watchdog.wxs
+        candle wix/watchdog.wxs -o wix/watchdog.wixobj
+        light wix/watchdog.wixobj -o publish/ObservatorySafety.Watchdog.msi
 
     # ============================
     # Sign MSIs
