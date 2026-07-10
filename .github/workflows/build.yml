@@ -22,17 +22,15 @@ jobs:
         dotnet-version: '9.0.x'
 
     # ============================
-    # Install WiX Toolset 3.14
+    # Install WiX Toolset 3.14 (ZIP)
     # ============================
-    - name: Install WiX Toolset 3.14 (ZIP)
+    - name: Install WiX Toolset 3.14
       shell: pwsh
       run: |
-        Invoke-WebRequest -Uri https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314exe.zip -OutFile wix.zip
-        Expand-Archive wix.zip -DestinationPath wix -Force
+        Invoke-WebRequest -Uri https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314.exe -OutFile wix314.exe
+        Start-Process .\wix314.exe -ArgumentList "/quiet" -Wait
 
-        # Add WiX tools to PATH
-        echo "${{ github.workspace }}\wix\bin" >> $env:GITHUB_PATH
-
+        echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" >> $env:GITHUB_PATH
 
 
     # ============================
@@ -128,17 +126,17 @@ jobs:
     - name: Generate MSI installers
       shell: pwsh
       run: |
-        New-Item -ItemType Directory -Path wix -Force | Out-Null
+        # Harvest components
+        heat dir publish/service -gg -sreg -scom -sfrag -cg ServiceComponents -out wix/ServiceComponents.wxs
+        heat dir publish/watchdog -gg -sreg -scom -sfrag -cg WatchdogComponents -out wix/WatchdogComponents.wxs
 
-        # SERVICE MSI
-        heat dir publish/service -gg -sreg -scom -sfrag -out wix/service.wxs
-        candle wix/service.wxs -o wix/service.wixobj
-        light wix/service.wixobj -o publish/ObservatorySafety.Service.msi
+        # Compile Product + Components
+        candle wix/Product.Service.wxs wix/ServiceComponents.wxs -o wix/
+        candle wix/Product.Watchdog.wxs wix/WatchdogComponents.wxs -o wix/
 
-        # WATCHDOG MSI
-        heat dir publish/watchdog -gg -sreg -scom -sfrag -out wix/watchdog.wxs
-        candle wix/watchdog.wxs -o wix/watchdog.wixobj
-        light wix/watchdog.wixobj -o publish/ObservatorySafety.Watchdog.msi
+        # Link into MSIs
+        light wix/Product.Service.wixobj wix/ServiceComponents.wixobj -o publish/ObservatorySafety.Service.msi
+        light wix/Product.Watchdog.wixobj wix/WatchdogComponents.wixobj -o publish/ObservatorySafety.Watchdog.msi
 
     # ============================
     # Sign MSIs
