@@ -145,9 +145,9 @@ jobs:
         tag_name: v1.0.${{ github.run_number }}
         name: ObservatorySafety v1.0.${{ github.run_number }}
         files: |
-          ./release/ObservatorySafety.Service.exe
-          ./release/appsettings.json
-          ./release/ObservatorySafety.Watchdog.exe
-          ./release/appsettings.json
+          ./release/service/ObservatorySafety.Service.exe
+          ./release/service/appsettings.json
+          ./release/watchdog/ObservatorySafety.Watchdog.exe
+          ./release/watchdog/appsettings.json
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
