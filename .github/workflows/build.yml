@@ -126,9 +126,9 @@ jobs:
     - name: Generate MSI installers
       shell: pwsh
       run: |
-        # Harvest components
-        heat dir publish/service -gg -sreg -scom -sfrag -cg ServiceComponents -out wix/ServiceComponents.wxs
-        heat dir publish/watchdog -gg -sreg -scom -sfrag -cg WatchdogComponents -out wix/WatchdogComponents.wxs
+        # Harvest components with correct directory root
+        heat dir publish/service -gg -sreg -scom -sfrag -dr INSTALLDIR -cg ServiceComponents -out wix/ServiceComponents.wxs
+        heat dir publish/watchdog -gg -sreg -scom -sfrag -dr INSTALLDIR -cg WatchdogComponents -out wix/WatchdogComponents.wxs
 
         # Compile Product + Components
         candle wix/Product.Service.wxs wix/ServiceComponents.wxs -o wix/
