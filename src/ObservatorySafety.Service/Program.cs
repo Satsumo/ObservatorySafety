@@ -31,7 +31,7 @@ static class Program
     var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
     Console.WriteLine($"Executable directory: {exeDir}");
 
-    var env = Environment.GetEnvironmentVariable("OBSERVATORY_ENVIRONMENT");
+    var env = Environment.GetEnvironmentVariable("OBSERVATORY_ENVIRONMENT") ?? "Production";
 
     try
     {
