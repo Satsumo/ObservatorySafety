@@ -1,21 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="Observatory Safety Watchdog" Language="1033"
-           Version="1.0.0.0" Manufacturer="Satwant"
-           UpgradeCode="F8D4B6A1-2C9E-4E7B-8F13-9A6C2D1B7E45">
+  <Product
+      Id="*"
+      Name="ObservatorySafety Watchdog"
+      Language="1033"
+      Version="1.0.0.0"
+      Manufacturer="Satwant"
+      UpgradeCode="PUT-GUID-HERE">
+
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
 
-    <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
-
-    <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="ProgramFilesFolder">
-        <Directory Id="INSTALLDIR" Name="ObservatorySafety">
-        </Directory>
-      </Directory>
+    <!-- Install to Program Files -->
+    <Directory Id="ProgramFilesFolder">
+      <Directory Id="INSTALLDIR" Name="ObservatorySafety.Watchdog" />
     </Directory>
 
-    <Feature Id="MainFeature" Title="Observatory Safety Watchdog" Level="1">
+    <!-- Heat.exe harvested components -->
+    <Feature Id="MainFeature" Title="ObservatorySafety Watchdog" Level="1">
       <ComponentGroupRef Id="WatchdogComponents" />
     </Feature>
+
+    <!-- Install the Windows Service -->
+    <Component Id="WatchdogInstaller" Directory="INSTALLDIR">
+      <File Id="WatchdogExe"
+            Source="$(var.WatchdogExePath)"
+            KeyPath="yes" />
+
+      <ServiceInstall
+          Id="ObservatorySafetyWatchdogInstall"
+          Name="ObservatorySafety.Watchdog"
+          DisplayName="Observatory Safety Watchdog"
+          Description="Restarts and monitors the ObservatorySafety Service."
+          Start="auto"
+          Type="ownProcess"
+          ErrorControl="normal"
+          Vital="yes" />
+
+      <ServiceControl
+          Id="ObservatorySafetyWatchdogControl"
+          Name="ObservatorySafety.Watchdog"
+          Start="install"
+          Stop="both"
+          Remove="uninstall"
+          Wait="yes" />
+    </Component>
+
   </Product>
 </Wix>

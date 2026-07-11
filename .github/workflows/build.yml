@@ -169,8 +169,8 @@ jobs:
         heat dir $watchdogPath -gg -sreg -scom -sfrag -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
 
         # Compile Product + Components
-        candle wix/Product.Service.wxs wix/generated/ServiceComponents.wxs -o wix/generated/
-        candle wix/Product.Watchdog.wxs wix/generated/WatchdogComponents.wxs -o wix/generated/
+        candle -dServiceExePath="$servicePath\ObservatorySafety.Service.exe" wix/Product.Service.wxs wix/generated/ServiceComponents.wxs -o wix/generated/
+        candle -dWatchdogExePath="$watchdogPath\ObservatorySafety.Watchdog.exe" wix/Product.Watchdog.wxs wix/generated/WatchdogComponents.wxs -o wix/generated/
 
         # Link into MSIs, binding SourceDir to the correct folders
         light -b $servicePath wix/generated/Product.Service.wixobj wix/generated/ServiceComponents.wixobj -o publish/ObservatorySafety.Service.msi
