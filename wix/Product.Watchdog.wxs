@@ -6,7 +6,7 @@
       Language="1033"
       Version="1.0.0.0"
       Manufacturer="Satwant"
-      UpgradeCode="PUT-GUID-HERE">
+      UpgradeCode="F8D4B6A1-2C9E-4E7B-8F13-9A6C2D1B7E45">
 
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
 
