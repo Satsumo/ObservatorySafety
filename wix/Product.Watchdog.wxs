@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
   <Product
       Id="*"
       Name="ObservatorySafety Watchdog"
@@ -10,10 +11,10 @@
 
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
 
-    <!-- Install to Program Files -->
+    <!-- REQUIRED ROOT DIRECTORY -->
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFilesFolder">
-        <Directory Id="INSTALLDIR" Name="ObservatorySafety.Service" />
+        <Directory Id="INSTALLDIR" Name="ObservatorySafety.Watchdog" />
       </Directory>
     </Directory>
 
@@ -22,7 +23,7 @@
       <ComponentGroupRef Id="WatchdogComponents" />
     </Feature>
 
-    <!-- Install the Windows Service -->
+    <!-- Windows Service installation -->
     <Component Id="WatchdogInstaller" Directory="INSTALLDIR">
       <File Id="WatchdogExe"
             Source="$(var.WatchdogExePath)"
@@ -49,3 +50,4 @@
 
   </Product>
 </Wix>
+
