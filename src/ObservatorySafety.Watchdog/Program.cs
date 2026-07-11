@@ -78,8 +78,8 @@ namespace ObservatorySafety.Watchdog
               services.AddSingleton<IAlertService>(sp =>
               {
                 var config = sp.GetRequiredService<IConfiguration>();
-
-                var composite = new CompositeAlertService(config);
+                var logger = sp.GetRequiredService < ILogger <CompositeAlertService>>();
+                var composite = new CompositeAlertService(logger, config);
 
                 composite.AddAlertService("Pushover", sp.GetRequiredService<PushoverAlertService>());
                 composite.AddAlertService("Email", sp.GetRequiredService<EmailAlertService>());
@@ -94,10 +94,6 @@ namespace ObservatorySafety.Watchdog
         Console.WriteLine("Building host…");
         var host = builder.Build();
         Console.WriteLine("Host built successfully.");
-
-        // CRITICAL: Set LogProvider.Factory BEFORE hosted services start
-        LogProvider.Factory = host.Services.GetRequiredService<ILoggerFactory>();
-        Log.Information("LoggerFactory assigned to LogProvider.Factory.");
 
         // Guaranteed startup log (creates the log file)
         Log.Information("ObservatorySafety.Watchdog starting. Args:\n{Args}", String.Join("\n", args));

@@ -1,19 +1,11 @@
 using System.Net;
 using System.Net.Mail;
-using System.Threading;
-using System.Threading.Tasks;
-
-using Microsoft.Extensions.Configuration;
-
-using ObservatorySafety.Core;
 
 namespace ObservatorySafety.Watchdog.Alerts
 {
   public class EmailAlertService : IAlertService
   {
-    private ILogger<EmailAlertService>? _loggerBase;
-    private ILogger<EmailAlertService> _logger =>
-        _loggerBase ??= LogProvider.Factory!.CreateLogger<EmailAlertService>();
+    private ILogger<EmailAlertService> _logger;
 
     private readonly string _smtpServer;
     private readonly int _smtpPort;
@@ -23,8 +15,9 @@ namespace ObservatorySafety.Watchdog.Alerts
     private readonly string _from;
     private readonly string _to;
 
-    public EmailAlertService(IConfiguration configuration)
+    public EmailAlertService(ILogger<EmailAlertService> logger, IConfiguration configuration)
     {
+      _logger = logger;
       var section = configuration.GetSection("AlertChannels:Email");
       _smtpServer = section.GetValue<string>("SmtpServer") ?? string.Empty;
       _smtpPort = section.GetValue<int>("SmtpPort");

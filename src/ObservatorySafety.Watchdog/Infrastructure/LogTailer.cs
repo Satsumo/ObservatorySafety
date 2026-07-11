@@ -1,18 +1,14 @@
 using System.Text;
 
-using ObservatorySafety.Core;
-using ObservatorySafety.Watchdog.Alerts;
-
 namespace ObservatorySafety.Watchdog.Infrastructure
 {
   public class LogTailer
   {
-    private ILogger<LogTailer>? _loggerBase;
-    private ILogger<LogTailer> _logger =>
-        _loggerBase ??= LogProvider.Factory!.CreateLogger<LogTailer>();
+    private ILogger<LogTailer> _logger;
 
-    public LogTailer()
+    public LogTailer(ILogger<LogTailer> logger)
     {
+      _logger = logger;
     }
 
     public string? GetLatestLogFile(string directory, string pattern)

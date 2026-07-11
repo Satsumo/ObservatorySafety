@@ -6,11 +6,12 @@ namespace ObservatorySafety.Core
 {
   public class HttpService : IHttpService
   {
-    private readonly ILogger<HttpService> _logger = LogProvider.Factory!.CreateLogger<HttpService>();
+    private readonly ILogger<HttpService> _logger;
     private readonly HttpClient _http;
 
-    public HttpService(string baseUrl, string? apiKey, HttpMessageHandler? handler = null)
+    public HttpService(ILogger<HttpService> logger, string baseUrl, string? apiKey, HttpMessageHandler? handler = null)
     {
+      _logger = logger;
       _http = handler == null
           ? new HttpClient()
           : new HttpClient(handler);

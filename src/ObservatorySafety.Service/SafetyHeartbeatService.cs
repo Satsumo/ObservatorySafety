@@ -1,18 +1,14 @@
 ﻿
-using ObservatorySafety.Core;
-
 namespace ObservatorySafety.Service
 {
   public class SafetyHeartbeatService : BackgroundService
   {
-    private ILogger<SafetyHeartbeatService>? _loggerBase;
-    private ILogger<SafetyHeartbeatService> _logger =>
-        _loggerBase ??= LogProvider.Factory!.CreateLogger<SafetyHeartbeatService>();
-
+    private readonly ILogger<SafetyHeartbeatService> _logger;
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(1);
 
-    public SafetyHeartbeatService()
+    public SafetyHeartbeatService(ILogger<SafetyHeartbeatService> logger)
     {
+      _logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

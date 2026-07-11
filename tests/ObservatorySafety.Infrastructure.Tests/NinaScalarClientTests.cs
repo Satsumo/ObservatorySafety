@@ -1,5 +1,7 @@
 ﻿using System.Net;
 
+using Microsoft.Extensions.Logging.Abstractions;
+
 using Moq;
 
 using ObservatorySafety.Core;
@@ -24,7 +26,7 @@ public class NinaScalarClientTests
       MountParkTimeThresholdSeconds = 2
     };
 
-    _client = new NinaScalarClient(_mockHttpService.Object, equipmentOptions);
+    _client = new NinaScalarClient(NullLogger<NinaScalarClient>.Instance, _mockHttpService.Object, equipmentOptions);
   }
 
   [Test]

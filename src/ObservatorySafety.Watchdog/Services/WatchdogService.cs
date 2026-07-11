@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.ServiceProcess;
 
-using ObservatorySafety.Core;
 using ObservatorySafety.Watchdog.Alerts;
 using ObservatorySafety.Watchdog.Infrastructure;
 
@@ -11,9 +10,7 @@ namespace ObservatorySafety.Watchdog.Services
   {
     private const int MaxBackoffSeconds = 300; // 5 minutes
 
-    private ILogger<WatchdogService>? _loggerBase;
-    private ILogger<WatchdogService> _logger =>
-        _loggerBase ??= LogProvider.Factory!.CreateLogger<WatchdogService>();
+    private ILogger<WatchdogService> _logger;
 
     private readonly IConfiguration _configuration;
     private readonly LogTailer _logTailer;
@@ -39,10 +36,12 @@ namespace ObservatorySafety.Watchdog.Services
     private int _logErrorBackoffSeconds = 0;
 
     public WatchdogService(
+        ILogger<WatchdogService> logger,
         IConfiguration configuration,
         LogTailer logTailer,
         IAlertService alertService)
     {
+      _logger = logger;
       _configuration = configuration;
       _logTailer = logTailer;
       _alertService = alertService;

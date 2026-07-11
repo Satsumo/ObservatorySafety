@@ -1,18 +1,16 @@
-using ObservatorySafety.Core;
 
 namespace ObservatorySafety.Watchdog.Alerts
 {
   public class CompositeAlertService : IAlertService
   {
-    private ILogger<CompositeAlertService>? _loggerBase;
-    private ILogger<CompositeAlertService> _logger =>
-        _loggerBase ??= LogProvider.Factory!.CreateLogger<CompositeAlertService>();
+    private ILogger<CompositeAlertService> _logger;
         
     private readonly IConfiguration _configuration;
     private readonly IDictionary<string, IAlertService> _channels = new Dictionary<string, IAlertService>();
 
-    public CompositeAlertService(IConfiguration configuration)
+    public CompositeAlertService(ILogger<CompositeAlertService> logger, IConfiguration configuration)
     {
+      _logger = logger;
       _configuration = configuration.GetSection("AlertChannels");
     }
 

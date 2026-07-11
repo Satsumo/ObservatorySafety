@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using NUnit.Framework;
 
@@ -26,7 +27,7 @@ namespace ObservatorySafety.Watchdog.Tests
             var email = new DummyChannel();
             var whatsapp = new DummyChannel();
 
-            var composite = new CompositeAlertService(configuration);
+            var composite = new CompositeAlertService(NullLogger<CompositeAlertService>.Instance, configuration);
             composite.AddAlertService("Pushover", pushover);
             composite.AddAlertService("Email", email);
             composite.AddAlertService("WhatsApp", whatsapp);

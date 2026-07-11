@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using NUnit.Framework;
 
@@ -30,10 +31,10 @@ namespace ObservatorySafety.Watchdog.Tests
           .AddInMemoryCollection(settings)
           .Build();
 
-      var logTailer = new LogTailer();
+      var logTailer = new LogTailer(NullLogger<LogTailer>.Instance);
       var alertService = new DummyAlertService();
 
-      return new WatchdogService(configuration, logTailer, alertService);
+      return new WatchdogService(NullLogger<WatchdogService>.Instance, configuration, logTailer, alertService);
     }
 
     [Test]

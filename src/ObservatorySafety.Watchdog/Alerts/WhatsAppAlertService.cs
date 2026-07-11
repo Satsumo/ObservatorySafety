@@ -1,4 +1,3 @@
-using ObservatorySafety.Core;
 
 using Twilio;
 using Twilio.Rest.Api.V2010.Account;
@@ -7,9 +6,7 @@ namespace ObservatorySafety.Watchdog.Alerts
 {
   public class WhatsAppAlertService : IAlertService
   {
-    private ILogger<WhatsAppAlertService>? _loggerBase;
-    private ILogger<WhatsAppAlertService> _logger =>
-        _loggerBase ??= LogProvider.Factory!.CreateLogger<WhatsAppAlertService>();
+    private ILogger<WhatsAppAlertService> _logger;
 
     private readonly string _sid;
     private readonly string _token;
@@ -17,8 +14,9 @@ namespace ObservatorySafety.Watchdog.Alerts
     private readonly string _toNumber;
     private bool _initialized;
 
-    public WhatsAppAlertService(IConfiguration configuration)
+    public WhatsAppAlertService(ILogger<WhatsAppAlertService> logger, IConfiguration configuration)
     {
+      _logger = logger;
       var section = configuration.GetSection("AlertChannels:WhatsApp");
       _sid = section.GetValue<string>("TwilioSid") ?? string.Empty;
       _token = section.GetValue<string>("TwilioToken") ?? string.Empty;

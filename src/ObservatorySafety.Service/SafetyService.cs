@@ -4,17 +4,19 @@ namespace ObservatorySafety.Service;
 
 public class SafetyService : BackgroundService
 {
-  private readonly ILogger<SafetyService> _logger = LogProvider.Factory!.CreateLogger<SafetyService>();
-
+  private readonly ILogger<SafetyService> _logger;
+  
   private readonly PowerMonitorService _watcher;
   private readonly ShutdownOrchestrator _orchestrator;
   private readonly IAstronomyApplicationClient _astronomyApplicationClient;
 
   public SafetyService(
+      ILogger<SafetyService> logger,
       PowerMonitorService watcher,
       ShutdownOrchestrator orchestrator,
       IAstronomyApplicationClient astronomyApplicationClient)
   {
+    _logger = logger;
     _watcher = watcher;
     _orchestrator = orchestrator;
     _astronomyApplicationClient = astronomyApplicationClient;

@@ -2,7 +2,7 @@
 
 public class PowerMonitorService : BackgroundService
 {
-  private readonly ILogger<PowerMonitorService> _logger = LogProvider.Factory!.CreateLogger<PowerMonitorService>();
+  private readonly ILogger<PowerMonitorService> _logger;
   private readonly IPowerStatusProvider _powerStatusProvider;
   private readonly TimeSpan _powerlossConfirmedThreshold;
 
@@ -10,8 +10,9 @@ public class PowerMonitorService : BackgroundService
 
   private PowerStatus _lastStatus = PowerStatus.Online;
 
-  public PowerMonitorService(IPowerStatusProvider powerStatusProvider, TimeSpan powerlossConfirmedThreshold)
+  public PowerMonitorService(ILogger<PowerMonitorService> logger, IPowerStatusProvider powerStatusProvider, TimeSpan powerlossConfirmedThreshold)
   {
+    _logger = logger;
     _powerStatusProvider = powerStatusProvider;
     _powerlossConfirmedThreshold = powerlossConfirmedThreshold;
   }

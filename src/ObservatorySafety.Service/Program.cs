@@ -87,7 +87,8 @@ static class Program
               Console.WriteLine("Creating IHttpService…");
 
               var ninaOpts = s.GetRequiredService<IOptions<NinaOptions>>().Value;
-              return new HttpService(ninaOpts.BaseUrl, ninaOpts.ApiKey);
+              var logger = s.GetRequiredService<ILogger<HttpService>>();
+              return new HttpService(logger, ninaOpts.BaseUrl, ninaOpts.ApiKey);
             });
 
             services.AddSingleton<IAstronomyApplicationClient>(sp =>
@@ -97,13 +98,17 @@ static class Program
               if (dryRun)
               {
                 Console.WriteLine("Using SimulatedClient (dry-run mode).");
-                return new SimulatedClient();
+                var logger = sp.GetRequiredService<ILogger<SimulatedClient>>();
+                return new SimulatedClient(logger);
               }
+              else
+              {
+                var httpService = sp.GetRequiredService<IHttpService>();
+                var equipmentOptions = sp.GetRequiredService<IOptions<EquipmentOptions>>().Value;
+                var logger = sp.GetRequiredService<ILogger<NinaScalarClient>>();
 
-              var httpService = sp.GetRequiredService<IHttpService>();
-              var equipmentOptions = sp.GetRequiredService<IOptions<EquipmentOptions>>().Value;
-
-              return new NinaScalarClient(httpService, equipmentOptions);
+                return new NinaScalarClient(logger, httpService, equipmentOptions);
+              }
             });
 
             services.AddSingleton<IPowerStatusProvider>(psp =>
@@ -113,10 +118,14 @@ static class Program
               if (simulatePowerLoss)
               {
                 Console.WriteLine("Using SimulatedPowerLossPowerStatusProvider.");
-                return new SimulatedPowerLossPowerStatusProvider();
+                var logger = psp.GetRequiredService<ILogger<SimulatedPowerLossPowerStatusProvider>>();
+                return new SimulatedPowerLossPowerStatusProvider(logger);
               }
-
-              return new WmiPowerStatusProvider();
+              else
+              {
+                var logger = psp.GetRequiredService<ILogger<WmiPowerStatusProvider>>();
+                return new WmiPowerStatusProvider(logger);
+              }
             });
 
             services.AddHostedService<SafetyHeartbeatService>();
@@ -127,8 +136,10 @@ static class Program
 
               var powerStatusProvider = pms.GetRequiredService<IPowerStatusProvider>();
               var safetyOpts = pms.GetRequiredService<IOptions<SafetyOptions>>().Value;
+              var logger = pms.GetRequiredService<ILogger<PowerMonitorService>>();
 
               return new PowerMonitorService(
+                      logger,
                       powerStatusProvider,
                       TimeSpan.FromSeconds(safetyOpts.PowerOutageConfirmedThresholdSeconds)
                   );
@@ -147,18 +158,15 @@ static class Program
               var watcher = sp.GetRequiredService<PowerMonitorService>();
               var orchestrator = sp.GetRequiredService<ShutdownOrchestrator>();
               var nina = sp.GetRequiredService<IAstronomyApplicationClient>();
+              var logger = sp.GetRequiredService<ILogger<SafetyService>>();
 
-              return new SafetyService(watcher, orchestrator, nina);
+              return new SafetyService(logger, watcher, orchestrator, nina);
             });
           });
 
       Console.WriteLine("Building host…");
       var host = builder.Build();
       Console.WriteLine("Host built successfully.");
-
-      // CRITICAL: Set LogProvider.Factory BEFORE hosted services start
-      LogProvider.Factory = host.Services.GetRequiredService<ILoggerFactory>();
-      Log.Information("LoggerFactory assigned to LogProvider.Factory.");
 
       // Guaranteed startup log (creates the log file)
       Log.Information("ObservatorySafety.Service starting. Args:\n{Args}", String.Join("\n", args));

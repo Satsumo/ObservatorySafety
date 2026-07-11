@@ -1,5 +1,4 @@
-﻿using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
 
@@ -10,12 +9,13 @@ namespace ObservatorySafety.Infrastructure;
 
 public class NinaScalarClient : IAstronomyApplicationClient
 {
-  private readonly ILogger<NinaScalarClient> _logger = LogProvider.Factory!.CreateLogger<NinaScalarClient>();
+  private readonly ILogger<NinaScalarClient> _logger;
   private readonly IHttpService _httpService;
   private readonly EquipmentOptions _equipmentOptions;
 
-  public NinaScalarClient(IHttpService httpService, EquipmentOptions equipmentOptions)
+  public NinaScalarClient(ILogger<NinaScalarClient> logger, IHttpService httpService, EquipmentOptions equipmentOptions)
   {
+    _logger = logger;
     _httpService = httpService;
     _equipmentOptions = equipmentOptions;
   }

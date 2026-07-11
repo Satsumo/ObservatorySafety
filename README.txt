@@ -23,7 +23,7 @@ sc start ObservatorySafetyWatchdog
 IMPORTANT:
 After installing the Watchdog service, you must amend the appsettings.json file to have the correct alert services enables (with their credential fields populated).
 Or a better solution is to add a new appsettings.PRODUCTION.json file with the correct settings and then set the environment variable DOTNET_ENVIRONMENT=PRODUCTION for the service to pick up the correct settings.
-
+You must update the "MainServiceLogDirectory" property in the appsettings.json file to point to the same log directory as the ObservatorySafety.Service service. Otherwise, the Watchdog service will not be able to find the log files for the main service and will not be able to send alerts.
 
 LOG FILE LOCATION
 =================

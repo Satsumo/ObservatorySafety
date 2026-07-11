@@ -1,19 +1,17 @@
-using ObservatorySafety.Core;
 
 namespace ObservatorySafety.Watchdog.Alerts
 {
   public class PushoverAlertService : IAlertService
   {
-    private ILogger<PushoverAlertService>? _loggerBase;
-    private ILogger<PushoverAlertService> _logger =>
-        _loggerBase ??= LogProvider.Factory!.CreateLogger<PushoverAlertService>();
+    private ILogger<PushoverAlertService> _logger;
 
     private readonly HttpClient _httpClient;
     private readonly string _userKey;
     private readonly string _appToken;
 
-    public PushoverAlertService(IConfiguration configuration)
+    public PushoverAlertService(ILogger<PushoverAlertService> logger, IConfiguration configuration)
     {
+      _logger = logger;
       _httpClient = new HttpClient();
       var section = configuration.GetSection("AlertChannels:Pushover");
       _userKey = section.GetValue<string>("UserKey") ?? string.Empty;

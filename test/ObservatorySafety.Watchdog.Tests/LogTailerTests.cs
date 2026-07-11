@@ -1,4 +1,5 @@
-using System.Text;
+
+using Microsoft.Extensions.Logging.Abstractions;
 
 using NUnit.Framework;
 
@@ -8,7 +9,7 @@ namespace ObservatorySafety.Watchdog.Tests
 {
   public class LogTailerTests
   {
-    private LogTailer CreateTailer() => new LogTailer();
+    private LogTailer CreateTailer() => new LogTailer(NullLogger<LogTailer>.Instance);
 
     private string CreateTempLogFile(params string[] lines)
     {

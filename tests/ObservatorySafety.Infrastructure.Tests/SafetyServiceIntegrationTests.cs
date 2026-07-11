@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
@@ -11,29 +12,6 @@ namespace ObservatorySafety.Infrastructure.Tests;
 [TestFixture]
 public class SafetyServiceIntegrationTests
 {
-  private ILogger<SafetyServiceIntegrationTests> _logger;
-
-  [SetUp]
-  public void Setup()
-  {
-    var loggerFactory = LoggerFactory.Create(builder =>
-    {
-      builder
-          .SetMinimumLevel(LogLevel.Debug)
-          .AddConsole();   // logs appear in test output
-    });
-
-    // Make your LogProvider use this factory
-    LogProvider.Factory = loggerFactory;
-    _logger = LogProvider.Factory.CreateLogger<SafetyServiceIntegrationTests>();
-
-  }
-
-  [TearDown]
-  public void TearDown()
-  {
-  }
-
   [Test]
   public async Task SafetyService_TriggersShutdown_AfterDebounce()
   {
@@ -43,13 +21,13 @@ public class SafetyServiceIntegrationTests
       PowerOutageConfirmedThresholdSeconds = 1
     };
 
-    var mockPowerStatusProvider = new SimulatedPowerLossPowerStatusProvider();
-    var watcher = new PowerMonitorService(mockPowerStatusProvider, TimeSpan.FromSeconds(safetyOpts.PowerOutageConfirmedThresholdSeconds));
+    var mockPowerStatusProvider = new SimulatedPowerLossPowerStatusProvider(NullLogger<SimulatedPowerLossPowerStatusProvider>.Instance);
+    var watcher = new PowerMonitorService(NullLogger<PowerMonitorService>.Instance, mockPowerStatusProvider, TimeSpan.FromSeconds(safetyOpts.PowerOutageConfirmedThresholdSeconds));
     var orchestrator = new ShutdownOrchestrator();
-    var nina = new SimulatedClient();
+    var nina = new SimulatedClient(NullLogger<SimulatedClient>.Instance);
 
     // IMPORTANT: disable auto-start
-    var service = new SafetyService(watcher, orchestrator, nina);
+    var service = new SafetyService(NullLogger<SafetyService>.Instance, watcher, orchestrator, nina);
 
     // Start the background service
     await watcher.StartAsync(CancellationToken.None);
