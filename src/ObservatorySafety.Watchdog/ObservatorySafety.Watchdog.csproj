@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UseWindowsService>true</UseWindowsService>
 
     <!-- Disable implicit content items so we can explicitly include appsettings.json -->
     <EnableDefaultContentItems>false</EnableDefaultContentItems>
