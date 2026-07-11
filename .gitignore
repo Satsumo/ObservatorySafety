@@ -363,3 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 /src/ObservatorySafety.Watchdog/appsettings.Development.json
 /src/ObservatorySafety.Watchdog/appsettings.Production.json
+/src/ObservatorySafety.Service/appsettings.Development.json
+/src/ObservatorySafety.Service/appsettings.Production.json
