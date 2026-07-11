@@ -165,8 +165,8 @@ jobs:
         $watchdogPath = Join-Path $root "publish/watchdog-msi"
 
         # Harvest components
-        heat dir $servicePath -gg -sreg -scom -sfrag -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
-        heat dir $watchdogPath -gg -sreg -scom -sfrag -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
+        heat dir $servicePath -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
+        heat dir $watchdogPath -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
 
         # Compile Product + Components
         candle -dServiceExePath="$servicePath\ObservatorySafety.Service.exe" wix/Product.Service.wxs wix/generated/ServiceComponents.wxs -o wix/generated/
