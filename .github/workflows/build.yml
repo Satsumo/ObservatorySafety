@@ -47,12 +47,12 @@ jobs:
 
           $content = Get-Content $file -Raw
 
-          $newContent = $content -replace 'Version="[\d\.]+"' , "Version=""$env:MSI_VERSION"""
+          # Replace ONLY the Product version, not the XML declaration
+          $newContent = $content -replace 'Version="1.0.0.0"', "Version=""$env:MSI_VERSION"""
 
-          # Write back as UTF-8 WITHOUT BOM
+          # Write back as UTF-8 without BOM
           [System.IO.File]::WriteAllText($file, $newContent, (New-Object System.Text.UTF8Encoding($false)))
         }
-
 
     # ============================
     # Install WiX Toolset 3.14
