@@ -21,7 +21,8 @@
 
     <!-- Heat.exe harvested components -->
     <Feature Id="MainFeature" Title="ObservatorySafety Service" Level="1">
-      <ComponentGroupRef Id="ServiceComponents" />
+        <ComponentGroupRef Id="ServiceComponents" />
+        <ComponentRef Id="ServiceInstaller" />
     </Feature>
 
     <!-- Windows Service installation -->

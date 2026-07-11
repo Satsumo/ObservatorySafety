@@ -22,6 +22,7 @@
     <!-- Heat.exe harvested components -->
     <Feature Id="MainFeature" Title="ObservatorySafety Watchdog" Level="1">
       <ComponentGroupRef Id="WatchdogComponents" />
+      <ComponentRef Id="WatchdogInstaller" />
     </Feature>
 
     <!-- Windows Service installation -->
