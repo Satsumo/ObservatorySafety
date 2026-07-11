@@ -5,6 +5,7 @@ using ObservatorySafety.Watchdog.Infrastructure;
 using ObservatorySafety.Watchdog.Services;
 
 using Serilog;
+using Serilog.Settings.Configuration;
 
 namespace ObservatorySafety.Watchdog
 {
@@ -38,8 +39,13 @@ namespace ObservatorySafety.Watchdog
         //
         // 2. Initialise Serilog BEFORE host is built
         //
+        var options = new ConfigurationReaderOptions(
+          typeof(ConsoleLoggerConfigurationExtensions).Assembly,
+          typeof(FileLoggerConfigurationExtensions).Assembly
+        );
+
         Log.Logger = new LoggerConfiguration()
-            .ReadFrom.Configuration(configuration)
+            .ReadFrom.Configuration(configuration, options)
             .CreateLogger();
 
         Log.Information("Starting ObservatorySafety.Service...");
