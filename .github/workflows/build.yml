@@ -238,10 +238,11 @@ jobs:
         name: ObservatorySafety v1.0.${{ github.run_number }}
         files: |
           ./release/service/ObservatorySafety.Service.exe
-          ./release/service/appsettings.json
+          ./release/service/appsettings.json#appsettings.service.json
           ./release/watchdog/ObservatorySafety.Watchdog.exe
-          ./release/watchdog/appsettings.json
+          ./release/watchdog/appsettings.json#appsettings.watchdog.json
           ./release/ObservatorySafety.Service.msi
           ./release/ObservatorySafety.Watchdog.msi
+
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
