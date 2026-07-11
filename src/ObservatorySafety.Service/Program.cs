@@ -62,7 +62,6 @@ static class Program
       // 3. Build host
       //
       var builder = Host.CreateDefaultBuilder(args)
-                        .UseConsoleLifetime()
                         .ConfigureLogging(logging =>
                         {
                           logging.ClearProviders();   // Ensure Serilog is the ONLY provider
@@ -176,6 +175,11 @@ static class Program
                             return new SafetyService(logger, watcher, orchestrator, nina);
                           });
                         });
+
+      if (!runAsConsole)
+      {
+        builder.UseWindowsService();
+      }
 
       Console.WriteLine("Building host…");
       var host = builder.Build();

@@ -55,7 +55,6 @@ namespace ObservatorySafety.Watchdog
         // 3. Build host
         //
         var builder = Host.CreateDefaultBuilder(args)
-                          .UseConsoleLifetime()
                           .ConfigureLogging(logging =>
                           {
                             logging.ClearProviders();   // Ensure Serilog is the ONLY provider
@@ -94,6 +93,11 @@ namespace ObservatorySafety.Watchdog
 
                             services.AddHostedService<WatchdogService>();
                           });
+
+        if (!runAsConsole)
+        {
+          builder.UseWindowsService();
+        }
 
         Console.WriteLine("Building host…");
         var host = builder.Build();
