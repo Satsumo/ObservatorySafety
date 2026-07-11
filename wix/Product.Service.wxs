@@ -11,8 +11,10 @@
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
 
     <!-- Install to Program Files -->
-    <Directory Id="ProgramFilesFolder">
-      <Directory Id="INSTALLDIR" Name="ObservatorySafety.Service" />
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLDIR" Name="ObservatorySafety.Service" />
+      </Directory>
     </Directory>
 
     <!-- Heat.exe harvested components -->
