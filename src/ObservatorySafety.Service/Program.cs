@@ -16,8 +16,6 @@ static class Program
   private static String ARG_CONSOLE = "--console";
   private static String ARG_DRY_RUN = "--dry-run";
   private static String ARG_SIMULATE_POWER_LOSS = "--simulate-power-loss";
-  private static String ARG_LOGGING_LEVEL = "--logging-minimumLevel";
-  private static String ARG_CONFIG = "--config";
 
   public static async Task Main(string[] args)
   {
@@ -31,17 +29,8 @@ static class Program
     Console.WriteLine($"dryRun = {dryRun}");
     Console.WriteLine($"simulatePowerLoss = {simulatePowerLoss}");
 
-    string? configPath = null;
-    var configIndex = Array.IndexOf(args, ARG_CONFIG);
-    if (configIndex >= 0 && configIndex + 1 < args.Length)
-    {
-      configPath = args[configIndex + 1];
-      Console.WriteLine($"Using custom config path: {configPath}");
-    }
-    else
-    {
-      Console.WriteLine("Using default config path: appsettings.json");
-    }
+    var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+    Console.WriteLine($"Executable directory: {exeDir}");
 
     try
     {
@@ -61,18 +50,12 @@ static class Program
           .ConfigureAppConfiguration((ctx, cfg) =>
           {
             Console.WriteLine("Configuring app configuration…");
+            cfg.SetBasePath(exeDir);
 
-            if (!string.IsNullOrWhiteSpace(configPath))
-            {
-              cfg.AddJsonFile(configPath, optional: false, reloadOnChange: true);
-            }
-            else
-            {
-              cfg.AddJsonFile("appsettings.json", optional: false);
-              cfg.AddJsonFile($"appsettings.{ctx.HostingEnvironment.EnvironmentName}.json",
-                optional: true,
-                reloadOnChange: true);
-            }
+            cfg.AddJsonFile("appsettings.json", optional: false);
+            cfg.AddJsonFile($"appsettings.{ctx.HostingEnvironment.EnvironmentName}.json",
+              optional: true,
+              reloadOnChange: true);
           })
           .UseSerilog((ctx, services, loggerConfig) =>
           {
@@ -83,19 +66,11 @@ static class Program
                     typeof(FileLoggerConfigurationExtensions).Assembly
                 );
 
+            // Read config first (console + file sink)
             loggerConfig
                     .ReadFrom.Configuration(ctx.Configuration, options)
                     .ReadFrom.Services(services);
-
-            var arg = args.FirstOrDefault(a => a.StartsWith(ARG_LOGGING_LEVEL, StringComparison.OrdinalIgnoreCase));
-            if (arg != null)
-            {
-              var levelText = arg.Split('=', 2)[1];
-              var level = Enum.Parse<LogEventLevel>(levelText, ignoreCase: true);
-              loggerConfig.MinimumLevel.Is(level);
-
-              Console.WriteLine($"Minimum logging level overridden to: {level}");
-            }
+            
           })
           .ConfigureServices((ctx, services) =>
           {

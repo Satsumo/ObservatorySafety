@@ -13,7 +13,6 @@ namespace ObservatorySafety.Watchdog
   public class Program
   {
     private static String ARG_CONSOLE = "--console";
-    private static String ARG_CONFIG = "--config";
 
     public static async Task Main(string[] args)
     {
@@ -23,19 +22,8 @@ namespace ObservatorySafety.Watchdog
 
       Console.WriteLine($"runAsConsole = {runAsConsole}");
 
-      string? configPath = null;
-      var configIndex = Array.IndexOf(args, ARG_CONFIG);
-      if (configIndex >= 0 && configIndex + 1 < args.Length)
-      {
-        configPath = args[configIndex + 1];
-        Console.WriteLine($"Using custom config path: {configPath}");
-      }
-      else
-      {
-        Console.WriteLine("Using default config path: appsettings.json");
-      }
-
-      var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+      var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+      Console.WriteLine($"Executable directory: {exeDir}");
 
       try
       {
@@ -56,18 +44,11 @@ namespace ObservatorySafety.Watchdog
             {
               Console.WriteLine("Configuring app configuration…");
               cfg.SetBasePath(exeDir);
-
-              if (!string.IsNullOrWhiteSpace(configPath))
-              {
-                cfg.AddJsonFile(configPath, optional: false, reloadOnChange: true);
-              }
-              else
-              {
-                cfg.AddJsonFile("appsettings.json", optional: false);
-                cfg.AddJsonFile($"appsettings.{ctx.HostingEnvironment.EnvironmentName}.json",
-                                optional: true,
-                                reloadOnChange: true);
-              }
+              
+              cfg.AddJsonFile("appsettings.json", optional: false);
+              cfg.AddJsonFile($"appsettings.{ctx.HostingEnvironment.EnvironmentName}.json",
+                              optional: true,
+                              reloadOnChange: true);
             })
             .UseSerilog((ctx, services, loggerConfig) =>
             {
@@ -77,11 +58,11 @@ namespace ObservatorySafety.Watchdog
                       typeof(ConsoleLoggerConfigurationExtensions).Assembly,
                       typeof(FileLoggerConfigurationExtensions).Assembly
                   );
-
+                                
+              // Read config first (console + file sink)
               loggerConfig
-                      .ReadFrom.Configuration(ctx.Configuration, options)
-                      .ReadFrom.Services(services);
-
+                  .ReadFrom.Configuration(ctx.Configuration, options)
+                  .ReadFrom.Services(services);
 
             })
             .ConfigureServices((context, services) =>
