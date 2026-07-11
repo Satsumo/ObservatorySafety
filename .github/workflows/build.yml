@@ -126,13 +126,15 @@ jobs:
     - name: Generate MSI installers
       shell: pwsh
       run: |
-        # Create a folder for generated WiX fragments (do NOT overwrite wix/)
+        # Create folder for generated WiX fragments
         New-Item -ItemType Directory -Path wix/generated -Force | Out-Null
 
-        # Harvest components with correct directory root
-        $servicePath = Join-Path $PWD "publish/service"
-        $watchdogPath = Join-Path $PWD "publish/watchdog"
+        # Absolute paths to publish folders
+        $root = "${{ github.workspace }}"
+        $servicePath = Join-Path $root "publish/service"
+        $watchdogPath = Join-Path $root "publish/watchdog"
 
+        # Harvest components with correct directory root
         heat dir $servicePath -gg -sreg -scom -sfrag -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
         heat dir $watchdogPath -gg -sreg -scom -sfrag -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
 
@@ -143,7 +145,6 @@ jobs:
         # Link into MSIs
         light wix/generated/Product.Service.wixobj wix/generated/ServiceComponents.wixobj -o publish/ObservatorySafety.Service.msi
         light wix/generated/Product.Watchdog.wixobj wix/generated/WatchdogComponents.wixobj -o publish/ObservatorySafety.Watchdog.msi
-
 
     # ============================
     # Sign MSIs
