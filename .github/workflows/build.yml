@@ -87,7 +87,7 @@ jobs:
         dotnet publish src/ObservatorySafety.Service/ObservatorySafety.Service.csproj
         --configuration Release
         --runtime win-x64
-        --self-contained false
+        --self-contained true
         /p:PublishSingleFile=false
         --output ./publish/service-msi
 
@@ -97,7 +97,7 @@ jobs:
         dotnet publish src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj
         --configuration Release
         --runtime win-x64
-        --self-contained false
+        --self-contained true
         /p:PublishSingleFile=false
         --output ./publish/watchdog-msi
 
