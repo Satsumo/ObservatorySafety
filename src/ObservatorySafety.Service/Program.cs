@@ -30,6 +30,8 @@ static class Program
     var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
     Console.WriteLine($"Executable directory: {exeDir}");
 
+    var env = Environment.GetEnvironmentVariable("OBSERVATORY_ENVIRONMENT");
+
     try
     {
       //
@@ -38,8 +40,7 @@ static class Program
       var configuration = new ConfigurationBuilder()
           .SetBasePath(exeDir)
           .AddJsonFile("appsettings.json", optional: false)
-          .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("OBSERVATORY_ENVIRONMENT")}.json",
-                       optional: true)
+          .AddJsonFile($"appsettings.{env}.json", optional: true)
           .Build();
 
       //
@@ -60,16 +61,14 @@ static class Program
                         {
                           logging.ClearProviders();   // Ensure Serilog is the ONLY provider
                         })
-                        .UseSerilog()                  // Use already-initialised Serilog
+                        .UseSerilog(Log.Logger)       // Use already-initialised Serilog
                         .ConfigureAppConfiguration((ctx, cfg) =>
                         {
                           Console.WriteLine("Configuring app configuration…");
                           cfg.SetBasePath(exeDir);
 
                           cfg.AddJsonFile("appsettings.json", optional: false);
-                          cfg.AddJsonFile($"appsettings.{ctx.HostingEnvironment.EnvironmentName}.json",
-                                    optional: true,
-                                    reloadOnChange: true);
+                          cfg.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true);
                         })
                         .ConfigureServices((ctx, services) =>
                         {
