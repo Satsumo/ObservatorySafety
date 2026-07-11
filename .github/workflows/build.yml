@@ -130,8 +130,11 @@ jobs:
         New-Item -ItemType Directory -Path wix/generated -Force | Out-Null
 
         # Harvest components with correct directory root
-        heat dir publish/service -gg -sreg -scom -sfrag -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
-        heat dir publish/watchdog -gg -sreg -scom -sfrag -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
+        $servicePath = Join-Path $PWD "publish/service"
+        $watchdogPath = Join-Path $PWD "publish/watchdog"
+
+        heat dir $servicePath -gg -sreg -scom -sfrag -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
+        heat dir $watchdogPath -gg -sreg -scom -sfrag -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
 
         # Compile Product + Components
         candle wix/Product.Service.wxs wix/generated/ServiceComponents.wxs -o wix/generated/
