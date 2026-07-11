@@ -141,6 +141,16 @@ jobs:
       env:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
 
+    - name: DEBUG — List MSI publish folders
+      shell: pwsh
+      run: |
+        Write-Host "=== SERVICE MSI FOLDER ==="
+        Get-ChildItem -Recurse ./publish/service-msi
+
+        Write-Host "=== WATCHDOG MSI FOLDER ==="
+        Get-ChildItem -Recurse ./publish/watchdog-msi
+
+
     # ============================
     # Generate MSI installers (WiX v3)
     # ============================
