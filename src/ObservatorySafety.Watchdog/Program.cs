@@ -1,12 +1,10 @@
 using System.Reflection;
 
-using ObservatorySafety.Core;
 using ObservatorySafety.Watchdog.Alerts;
 using ObservatorySafety.Watchdog.Infrastructure;
 using ObservatorySafety.Watchdog.Services;
 
 using Serilog;
-using Serilog.Settings.Configuration;
 
 namespace ObservatorySafety.Watchdog
 {
@@ -27,73 +25,70 @@ namespace ObservatorySafety.Watchdog
 
       try
       {
-        Log.Information("Starting ObservatorySafety.Watchdog...");
+        //
+        // 1. Build configuration manually BEFORE host is built
+        //
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(exeDir)
+            .AddJsonFile("appsettings.json", optional: false)
+            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("OBSERVATORY_ENVIRONMENT")}.json",
+                         optional: true)
+            .Build();
 
+        //
+        // 2. Initialise Serilog BEFORE host is built
+        //
+        Log.Logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(configuration)
+            .CreateLogger();
+
+        Log.Information("Starting ObservatorySafety.Service...");
+
+        //
+        // 3. Build host
+        //
         var builder = Host.CreateDefaultBuilder(args)
-                          .UseConsoleLifetime();
+                          .UseConsoleLifetime()
+                          .ConfigureLogging(logging =>
+                          {
+                            logging.ClearProviders();   // Ensure Serilog is the ONLY provider
+                          })
+                          .UseSerilog()                  // Use already-initialised Serilog
+                          .ConfigureAppConfiguration((ctx, cfg) =>
+                          {
+                            Console.WriteLine("Configuring app configuration…");
+                            cfg.SetBasePath(exeDir);
 
-        // CRITICAL: Apply Windows Service hosting BEFORE configuring services
-        if (!runAsConsole)
-        {
-          Console.WriteLine("Configuring Windows Service hosting…");
-          builder = builder.UseWindowsService();
-        }
+                            cfg.AddJsonFile("appsettings.json", optional: false);
+                            cfg.AddJsonFile($"appsettings.{ctx.HostingEnvironment.EnvironmentName}.json",
+                                      optional: true,
+                                      reloadOnChange: true);
+                          })
+                          .ConfigureServices((context, services) =>
+                          {
+                            var configuration = context.Configuration;
 
-        builder
-            .ConfigureAppConfiguration((ctx, cfg) =>
-            {
-              Console.WriteLine("Configuring app configuration…");
-              cfg.SetBasePath(exeDir);
-              
-              cfg.AddJsonFile("appsettings.json", optional: false);
-              cfg.AddJsonFile($"appsettings.{ctx.HostingEnvironment.EnvironmentName}.json",
-                              optional: true,
-                              reloadOnChange: true);
-            })
-            .ConfigureLogging(logging =>
-            {
-              logging.ClearProviders();   // CRITICAL FIX
-            })
-            .UseSerilog((ctx, services, loggerConfig) =>
-            {
-              Console.WriteLine("Configuring Serilog…");
+                            services.AddSingleton<LogTailer>();
 
-              var options = new ConfigurationReaderOptions(
-                      typeof(ConsoleLoggerConfigurationExtensions).Assembly,
-                      typeof(FileLoggerConfigurationExtensions).Assembly
-                  );
-                                
-              // Read config first (console + file sink)
-              loggerConfig
-                  .ReadFrom.Configuration(ctx.Configuration, options)
-                  .ReadFrom.Services(services);
+                            services.AddSingleton<PushoverAlertService>();
+                            services.AddSingleton<EmailAlertService>();
+                            services.AddSingleton<WhatsAppAlertService>();
 
-            })
-            .ConfigureServices((context, services) =>
-            {
-              var configuration = context.Configuration;
+                            services.AddSingleton<IAlertService>(sp =>
+                            {
+                              var config = sp.GetRequiredService<IConfiguration>();
+                              var logger = sp.GetRequiredService<ILogger<CompositeAlertService>>();
+                              var composite = new CompositeAlertService(logger, config);
 
-              services.AddSingleton<LogTailer>();
+                              composite.AddAlertService("Pushover", sp.GetRequiredService<PushoverAlertService>());
+                              composite.AddAlertService("Email", sp.GetRequiredService<EmailAlertService>());
+                              composite.AddAlertService("WhatsApp", sp.GetRequiredService<WhatsAppAlertService>());
 
-              services.AddSingleton<PushoverAlertService>();
-              services.AddSingleton<EmailAlertService>();
-              services.AddSingleton<WhatsAppAlertService>();
+                              return composite;
+                            });
 
-              services.AddSingleton<IAlertService>(sp =>
-              {
-                var config = sp.GetRequiredService<IConfiguration>();
-                var logger = sp.GetRequiredService < ILogger <CompositeAlertService>>();
-                var composite = new CompositeAlertService(logger, config);
-
-                composite.AddAlertService("Pushover", sp.GetRequiredService<PushoverAlertService>());
-                composite.AddAlertService("Email", sp.GetRequiredService<EmailAlertService>());
-                composite.AddAlertService("WhatsApp", sp.GetRequiredService<WhatsAppAlertService>());
-
-                return composite;
-              });
-
-              services.AddHostedService<WatchdogService>();
-            });
+                            services.AddHostedService<WatchdogService>();
+                          });
 
         Console.WriteLine("Building host…");
         var host = builder.Build();

@@ -8,8 +8,6 @@ using ObservatorySafety.Infrastructure.Simulation;
 using ObservatorySafety.Service;
 
 using Serilog;
-using Serilog.Events;
-using Serilog.Settings.Configuration;
 
 static class Program
 {
@@ -29,154 +27,158 @@ static class Program
     Console.WriteLine($"dryRun = {dryRun}");
     Console.WriteLine($"simulatePowerLoss = {simulatePowerLoss}");
 
-    var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+    var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
     Console.WriteLine($"Executable directory: {exeDir}");
 
     try
     {
+      //
+      // 1. Build configuration manually BEFORE host is built
+      //
+      var configuration = new ConfigurationBuilder()
+          .SetBasePath(exeDir)
+          .AddJsonFile("appsettings.json", optional: false)
+          .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("OBSERVATORY_ENVIRONMENT")}.json",
+                       optional: true)
+          .Build();
+
+      //
+      // 2. Initialise Serilog BEFORE host is built
+      //
+      Log.Logger = new LoggerConfiguration()
+          .ReadFrom.Configuration(configuration)
+          .CreateLogger();
+
       Log.Information("Starting ObservatorySafety.Service...");
 
+      //
+      // 3. Build host
+      //
       var builder = Host.CreateDefaultBuilder(args)
-                        .UseConsoleLifetime();
+                        .UseConsoleLifetime()
+                        .ConfigureLogging(logging =>
+                        {
+                          logging.ClearProviders();   // Ensure Serilog is the ONLY provider
+                        })
+                        .UseSerilog()                  // Use already-initialised Serilog
+                        .ConfigureAppConfiguration((ctx, cfg) =>
+                        {
+                          Console.WriteLine("Configuring app configuration…");
+                          cfg.SetBasePath(exeDir);
 
-      // CRITICAL: Apply Windows Service hosting BEFORE configuring services
-      if (!runAsConsole)
-      {
-        Console.WriteLine("Configuring Windows Service hosting…");
-        builder = builder.UseWindowsService();
-      }
+                          cfg.AddJsonFile("appsettings.json", optional: false);
+                          cfg.AddJsonFile($"appsettings.{ctx.HostingEnvironment.EnvironmentName}.json",
+                                    optional: true,
+                                    reloadOnChange: true);
+                        })
+                        .ConfigureServices((ctx, services) =>
+                        {
+                          Console.WriteLine("Configuring services…");
 
-      builder
-          .ConfigureAppConfiguration((ctx, cfg) =>
-          {
-            Console.WriteLine("Configuring app configuration…");
-            cfg.SetBasePath(exeDir);
+                          services.Configure<NinaOptions>(ctx.Configuration.GetSection("Nina"));
+                          services.Configure<SafetyOptions>(ctx.Configuration.GetSection("Safety"));
+                          services.Configure<EquipmentOptions>(ctx.Configuration.GetSection("Equipment"));
 
-            cfg.AddJsonFile("appsettings.json", optional: false);
-            cfg.AddJsonFile($"appsettings.{ctx.HostingEnvironment.EnvironmentName}.json",
-              optional: true,
-              reloadOnChange: true);
-          })
-          .ConfigureLogging(logging =>
-          {
-            logging.ClearProviders();   // CRITICAL FIX
-          })
-          .UseSerilog((ctx, services, loggerConfig) =>
-          {
-            Console.WriteLine("Configuring Serilog…");
+                          services.AddSingleton<ShutdownOrchestrator>();
 
-            var options = new ConfigurationReaderOptions(
-                    typeof(ConsoleLoggerConfigurationExtensions).Assembly,
-                    typeof(FileLoggerConfigurationExtensions).Assembly
-                );
+                          services.AddSingleton<IHttpService>(s =>
+                          {
+                            Console.WriteLine("Creating IHttpService…");
 
-            // Read config first (console + file sink)
-            loggerConfig
-                    .ReadFrom.Configuration(ctx.Configuration, options)
-                    .ReadFrom.Services(services);
-            
-          })
-          .ConfigureServices((ctx, services) =>
-          {
-            Console.WriteLine("Configuring services…");
+                            var ninaOpts = s.GetRequiredService<IOptions<NinaOptions>>().Value;
+                            var logger = s.GetRequiredService<ILogger<HttpService>>();
+                            return new HttpService(logger, ninaOpts.BaseUrl, ninaOpts.ApiKey);
+                          });
 
-            services.Configure<NinaOptions>(ctx.Configuration.GetSection("Nina"));
-            services.Configure<SafetyOptions>(ctx.Configuration.GetSection("Safety"));
-            services.Configure<EquipmentOptions>(ctx.Configuration.GetSection("Equipment"));
+                          services.AddSingleton<IAstronomyApplicationClient>(sp =>
+                          {
+                            Console.WriteLine("Creating IAstronomyApplicationClient…");
 
-            services.AddSingleton<ShutdownOrchestrator>();
+                            if (dryRun)
+                            {
+                              Console.WriteLine("Using SimulatedClient (dry-run mode).");
+                              var logger = sp.GetRequiredService<ILogger<SimulatedClient>>();
+                              return new SimulatedClient(logger);
+                            }
+                            else
+                            {
+                              var httpService = sp.GetRequiredService<IHttpService>();
+                              var equipmentOptions = sp.GetRequiredService<IOptions<EquipmentOptions>>().Value;
+                              var logger = sp.GetRequiredService<ILogger<NinaScalarClient>>();
 
-            services.AddSingleton<IHttpService>(s =>
-            {
-              Console.WriteLine("Creating IHttpService…");
+                              return new NinaScalarClient(logger, httpService, equipmentOptions);
+                            }
+                          });
 
-              var ninaOpts = s.GetRequiredService<IOptions<NinaOptions>>().Value;
-              var logger = s.GetRequiredService<ILogger<HttpService>>();
-              return new HttpService(logger, ninaOpts.BaseUrl, ninaOpts.ApiKey);
-            });
+                          services.AddSingleton<IPowerStatusProvider>(psp =>
+                          {
+                            Console.WriteLine("Creating IPowerStatusProvider…");
 
-            services.AddSingleton<IAstronomyApplicationClient>(sp =>
-            {
-              Console.WriteLine("Creating IAstronomyApplicationClient…");
+                            if (simulatePowerLoss)
+                            {
+                              Console.WriteLine("Using SimulatedPowerLossPowerStatusProvider.");
+                              var logger = psp.GetRequiredService<ILogger<SimulatedPowerLossPowerStatusProvider>>();
+                              return new SimulatedPowerLossPowerStatusProvider(logger);
+                            }
+                            else
+                            {
+                              var logger = psp.GetRequiredService<ILogger<WmiPowerStatusProvider>>();
+                              return new WmiPowerStatusProvider(logger);
+                            }
+                          });
 
-              if (dryRun)
-              {
-                Console.WriteLine("Using SimulatedClient (dry-run mode).");
-                var logger = sp.GetRequiredService<ILogger<SimulatedClient>>();
-                return new SimulatedClient(logger);
-              }
-              else
-              {
-                var httpService = sp.GetRequiredService<IHttpService>();
-                var equipmentOptions = sp.GetRequiredService<IOptions<EquipmentOptions>>().Value;
-                var logger = sp.GetRequiredService<ILogger<NinaScalarClient>>();
+                          //
+                          // Heartbeat hosted service
+                          //
+                          services.AddHostedService<SafetyHeartbeatService>();
 
-                return new NinaScalarClient(logger, httpService, equipmentOptions);
-              }
-            });
+                          //
+                          // PowerMonitorService
+                          //
+                          services.AddSingleton<PowerMonitorService>(pms =>
+                          {
+                            Console.WriteLine("Creating PowerMonitorService…");
 
-            services.AddSingleton<IPowerStatusProvider>(psp =>
-            {
-              Console.WriteLine("Creating IPowerStatusProvider…");
+                            var powerStatusProvider = pms.GetRequiredService<IPowerStatusProvider>();
+                            var safetyOpts = pms.GetRequiredService<IOptions<SafetyOptions>>().Value;
+                            var logger = pms.GetRequiredService<ILogger<PowerMonitorService>>();
 
-              if (simulatePowerLoss)
-              {
-                Console.WriteLine("Using SimulatedPowerLossPowerStatusProvider.");
-                var logger = psp.GetRequiredService<ILogger<SimulatedPowerLossPowerStatusProvider>>();
-                return new SimulatedPowerLossPowerStatusProvider(logger);
-              }
-              else
-              {
-                var logger = psp.GetRequiredService<ILogger<WmiPowerStatusProvider>>();
-                return new WmiPowerStatusProvider(logger);
-              }
-            });
+                            return new PowerMonitorService(
+                                          logger,
+                                          powerStatusProvider,
+                                          TimeSpan.FromSeconds(safetyOpts.PowerOutageConfirmedThresholdSeconds)
+                                      );
+                          });
 
-            services.AddHostedService<SafetyHeartbeatService>();
+                          services.AddHostedService(sp =>
+                          {
+                            Console.WriteLine("Registering PowerMonitorService hosted service…");
+                            return sp.GetRequiredService<PowerMonitorService>();
+                          });
 
-            services.AddSingleton<PowerMonitorService>(pms =>
-            {
-              Console.WriteLine("Creating PowerMonitorService…");
+                          //
+                          // SafetyService
+                          //
+                          services.AddHostedService(sp =>
+                          {
+                            Console.WriteLine("Registering SafetyService hosted service…");
 
-              var powerStatusProvider = pms.GetRequiredService<IPowerStatusProvider>();
-              var safetyOpts = pms.GetRequiredService<IOptions<SafetyOptions>>().Value;
-              var logger = pms.GetRequiredService<ILogger<PowerMonitorService>>();
+                            var watcher = sp.GetRequiredService<PowerMonitorService>();
+                            var orchestrator = sp.GetRequiredService<ShutdownOrchestrator>();
+                            var nina = sp.GetRequiredService<IAstronomyApplicationClient>();
+                            var logger = sp.GetRequiredService<ILogger<SafetyService>>();
 
-              return new PowerMonitorService(
-                      logger,
-                      powerStatusProvider,
-                      TimeSpan.FromSeconds(safetyOpts.PowerOutageConfirmedThresholdSeconds)
-                  );
-            });
-
-            services.AddHostedService(sp =>
-            {
-              Console.WriteLine("Registering PowerMonitorService hosted service…");
-              return sp.GetRequiredService<PowerMonitorService>();
-            });
-
-            services.AddHostedService(sp =>
-            {
-              Console.WriteLine("Registering SafetyService hosted service…");
-
-              var watcher = sp.GetRequiredService<PowerMonitorService>();
-              var orchestrator = sp.GetRequiredService<ShutdownOrchestrator>();
-              var nina = sp.GetRequiredService<IAstronomyApplicationClient>();
-              var logger = sp.GetRequiredService<ILogger<SafetyService>>();
-
-              return new SafetyService(logger, watcher, orchestrator, nina);
-            });
-          });
+                            return new SafetyService(logger, watcher, orchestrator, nina);
+                          });
+                        });
 
       Console.WriteLine("Building host…");
       var host = builder.Build();
       Console.WriteLine("Host built successfully.");
 
-      // Guaranteed startup log (creates the log file)
       Log.Information("ObservatorySafety.Service starting. Args:\n{Args}", String.Join("\n", args));
 
       Console.WriteLine("Starting host.RunAsync()…");
-
 
       await host.RunAsync();
     }

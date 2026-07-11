@@ -48,6 +48,16 @@
           Stop="both"
           Remove="uninstall"
           Wait="yes" />
+
+      <!-- CORRECT WAY TO SET ENVIRONMENT VARIABLE IN WIX v3 -->
+      <RegistryValue
+          Root="HKLM"
+          Key="SYSTEM\CurrentControlSet\Services\ObservatorySafety.Watchdog"
+          Name="Environment"
+          Type="multiString"
+          Value="OBSERVATORY_ENVIRONMENT=Production"
+          Action="write" />
+
     </Component>
 
   </Product>
