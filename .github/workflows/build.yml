@@ -159,22 +159,37 @@ jobs:
       run: |
         New-Item -ItemType Directory -Path wix/generated -Force | Out-Null
 
-        # Use actual working directory
         $root = $PWD
         $servicePath = Join-Path $root "publish/service-msi"
         $watchdogPath = Join-Path $root "publish/watchdog-msi"
 
-        # Harvest components
-        heat dir $servicePath -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
-        heat dir $watchdogPath -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
+        # Move EXEs out of the harvested folders so heat doesn't include them
+        $serviceExe = Join-Path $servicePath "ObservatorySafety.Service.exe"
+        $watchdogExe = Join-Path $watchdogPath "ObservatorySafety.Watchdog.exe"
 
-        # Compile Product + Components
-        candle -dServiceExePath="$servicePath\ObservatorySafety.Service.exe" wix/Product.Service.wxs wix/generated/ServiceComponents.wxs -o wix/generated/
-        candle -dWatchdogExePath="$watchdogPath\ObservatorySafety.Watchdog.exe" wix/Product.Watchdog.wxs wix/generated/WatchdogComponents.wxs -o wix/generated/
+        $servicePayload = Join-Path $servicePath "payload"
+        $watchdogPayload = Join-Path $watchdogPath "payload"
 
-        # Link into MSIs, binding SourceDir to the correct folders
-        light -b $servicePath wix/generated/Product.Service.wixobj wix/generated/ServiceComponents.wixobj -o publish/ObservatorySafety.Service.msi
-        light -b $watchdogPath wix/generated/Product.Watchdog.wixobj wix/generated/WatchdogComponents.wixobj -o publish/ObservatorySafety.Watchdog.msi
+        New-Item -ItemType Directory -Path $servicePayload -Force | Out-Null
+        New-Item -ItemType Directory -Path $watchdogPayload -Force | Out-Null
+
+        Get-ChildItem $servicePath -File | Where-Object { $_.Name -ne "ObservatorySafety.Service.exe" } | `
+          ForEach-Object { Move-Item $_.FullName $servicePayload -Force }
+
+        Get-ChildItem $watchdogPath -File | Where-Object { $_.Name -ne "ObservatorySafety.Watchdog.exe" } | `
+          ForEach-Object { Move-Item $_.FullName $watchdogPayload -Force }
+
+        # Harvest components (payload only, no EXE)
+        heat dir $servicePayload -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
+        heat dir $watchdogPayload -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
+
+        # Compile Product + Components, passing EXE paths explicitly
+        candle -dServiceExePath="$serviceExe" wix/Product.Service.wxs wix/generated/ServiceComponents.wxs -o wix/generated/
+        candle -dWatchdogExePath="$watchdogExe" wix/Product.Watchdog.wxs wix/generated/WatchdogComponents.wxs -o wix/generated/
+
+        # Link into MSIs, binding SourceDir to payload folders
+        light -b $servicePayload wix/generated/Product.Service.wixobj wix/generated/ServiceComponents.wixobj -o publish/ObservatorySafety.Service.msi
+        light -b $watchdogPayload wix/generated/Product.Watchdog.wixobj wix/generated/WatchdogComponents.wixobj -o publish/ObservatorySafety.Watchdog.msi
 
     # ============================
     # Sign MSIs
