@@ -21,4 +21,11 @@
   <ItemGroup>
     <ProjectReference Include="..\ObservatorySafety.Core\ObservatorySafety.Core.csproj" />
   </ItemGroup>
+
+  <!-- Explicitly include appsettings.json -->
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

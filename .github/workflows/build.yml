@@ -22,16 +22,14 @@ jobs:
         dotnet-version: '9.0.x'
 
     # ============================
-    # Install WiX Toolset 3.14 (ZIP)
+    # Install WiX Toolset 3.14
     # ============================
     - name: Install WiX Toolset 3.14
       shell: pwsh
       run: |
         Invoke-WebRequest -Uri https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314.exe -OutFile wix314.exe
         Start-Process .\wix314.exe -ArgumentList "/quiet" -Wait
-
         echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" >> $env:GITHUB_PATH
-
 
     # ============================
     # Restore dependencies
@@ -50,7 +48,7 @@ jobs:
         dotnet build src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj --configuration Release
 
     # ============================
-    # Publish both EXEs
+    # Publish single-file EXEs
     # ============================
     - name: Publish Service EXE
       shell: pwsh
@@ -81,6 +79,29 @@ jobs:
         --output ./publish/watchdog
 
     # ============================
+    # Publish loose files for MSI
+    # ============================
+    - name: Publish Service (MSI loose files)
+      shell: pwsh
+      run: >
+        dotnet publish src/ObservatorySafety.Service/ObservatorySafety.Service.csproj
+        --configuration Release
+        --runtime win-x64
+        --self-contained false
+        /p:PublishSingleFile=false
+        --output ./publish/service-msi
+
+    - name: Publish Watchdog (MSI loose files)
+      shell: pwsh
+      run: >
+        dotnet publish src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj
+        --configuration Release
+        --runtime win-x64
+        --self-contained false
+        /p:PublishSingleFile=false
+        --output ./publish/watchdog-msi
+
+    # ============================
     # Decode Base64 PFX certificate
     # ============================
     - name: Decode PFX certificate
@@ -92,7 +113,7 @@ jobs:
         SIGNING_CERT: ${{ secrets.SIGNING_CERT }}
 
     # ============================
-    # Sign both EXEs
+    # Sign EXEs
     # ============================
     - name: Sign EXEs
       shell: pwsh
@@ -131,8 +152,8 @@ jobs:
 
         # Absolute paths to publish folders
         $root = "${{ github.workspace }}"
-        $servicePath = Join-Path $root "publish/service"
-        $watchdogPath = Join-Path $root "publish/watchdog"
+        $servicePath = Join-Path $root "publish/service-msi"
+        $watchdogPath = Join-Path $root "publish/watchdog-msi"
 
         # Harvest components with correct directory root
         heat dir $servicePath -gg -sreg -scom -sfrag -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
