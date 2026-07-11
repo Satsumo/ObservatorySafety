@@ -159,7 +159,8 @@ jobs:
       run: |
         New-Item -ItemType Directory -Path wix/generated -Force | Out-Null
 
-        $root = "${{ github.workspace }}"
+        # Use actual working directory, not github.workspace
+        $root = $PWD
         $servicePath = Join-Path $root "publish/service-msi"
         $watchdogPath = Join-Path $root "publish/watchdog-msi"
 
