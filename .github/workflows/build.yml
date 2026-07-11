@@ -79,7 +79,7 @@ jobs:
         --output ./publish/watchdog
 
     # ============================
-    # Publish loose files for MSI
+    # Publish loose files for MSI (NO UseWindowsService=false)
     # ============================
     - name: Publish Service (MSI loose files)
       shell: pwsh
@@ -147,23 +147,18 @@ jobs:
     - name: Generate MSI installers
       shell: pwsh
       run: |
-        # Create folder for generated WiX fragments
         New-Item -ItemType Directory -Path wix/generated -Force | Out-Null
 
-        # Absolute paths to publish folders
         $root = "${{ github.workspace }}"
         $servicePath = Join-Path $root "publish/service-msi"
         $watchdogPath = Join-Path $root "publish/watchdog-msi"
 
-        # Harvest components with correct directory root
         heat dir $servicePath -gg -sreg -scom -sfrag -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
         heat dir $watchdogPath -gg -sreg -scom -sfrag -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
 
-        # Compile Product + Components
         candle wix/Product.Service.wxs wix/generated/ServiceComponents.wxs -o wix/generated/
         candle wix/Product.Watchdog.wxs wix/generated/WatchdogComponents.wxs -o wix/generated/
 
-        # Link into MSIs
         light wix/generated/Product.Service.wixobj wix/generated/ServiceComponents.wixobj -o publish/ObservatorySafety.Service.msi
         light wix/generated/Product.Watchdog.wixobj wix/generated/WatchdogComponents.wixobj -o publish/ObservatorySafety.Watchdog.msi
 
