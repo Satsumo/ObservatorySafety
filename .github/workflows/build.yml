@@ -44,9 +44,15 @@ jobs:
 
         foreach ($file in $files) {
           Write-Host "Patching version in $file"
-          (Get-Content $file) -replace 'Version="[\d\.]+"' , "Version=""$env:MSI_VERSION""" |
-            Set-Content $file
+
+          $content = Get-Content $file -Raw
+
+          $newContent = $content -replace 'Version="[\d\.]+"' , "Version=""$env:MSI_VERSION"""
+
+          # Write back as UTF-8 WITHOUT BOM
+          [System.IO.File]::WriteAllText($file, $newContent, (New-Object System.Text.UTF8Encoding($false)))
         }
+
 
     # ============================
     # Install WiX Toolset 3.14
