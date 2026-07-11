@@ -57,6 +57,10 @@ static class Program
               optional: true,
               reloadOnChange: true);
           })
+          .ConfigureLogging(logging =>
+          {
+            logging.ClearProviders();   // CRITICAL FIX
+          })
           .UseSerilog((ctx, services, loggerConfig) =>
           {
             Console.WriteLine("Configuring Serilog…");
