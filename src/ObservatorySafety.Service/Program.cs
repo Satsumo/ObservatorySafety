@@ -119,6 +119,8 @@ static class Program
               return new WmiPowerStatusProvider();
             });
 
+            services.AddHostedService<SafetyHeartbeatService>();
+
             services.AddSingleton<PowerMonitorService>(pms =>
             {
               Console.WriteLine("Creating PowerMonitorService…");
