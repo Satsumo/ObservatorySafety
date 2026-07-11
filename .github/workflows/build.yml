@@ -22,6 +22,33 @@ jobs:
         dotnet-version: '9.0.x'
 
     # ============================
+    # Generate MSI version
+    # ============================
+    - name: Generate MSI version
+      shell: pwsh
+      run: |
+        $version = "1.0.$($env:GITHUB_RUN_NUMBER).0"
+        echo "MSI_VERSION=$version" >> $env:GITHUB_ENV
+        Write-Host "MSI Version: $version"
+
+    # ============================
+    # Patch WiX version numbers
+    # ============================
+    - name: Patch WiX Product Versions
+      shell: pwsh
+      run: |
+        $files = @(
+          "wix/Product.Service.wxs",
+          "wix/Product.Watchdog.wxs"
+        )
+
+        foreach ($file in $files) {
+          Write-Host "Patching version in $file"
+          (Get-Content $file) -replace 'Version="[\d\.]+"' , "Version=""$env:MSI_VERSION""" |
+            Set-Content $file
+        }
+
+    # ============================
     # Install WiX Toolset 3.14
     # ============================
     - name: Install WiX Toolset 3.14
@@ -79,7 +106,7 @@ jobs:
         --output ./publish/watchdog
 
     # ============================
-    # Publish loose files for MSI (NO UseWindowsService=false)
+    # Publish loose files for MSI
     # ============================
     - name: Publish Service (MSI loose files)
       shell: pwsh
@@ -141,18 +168,8 @@ jobs:
       env:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
 
-    - name: DEBUG — List MSI publish folders
-      shell: pwsh
-      run: |
-        Write-Host "=== SERVICE MSI FOLDER ==="
-        Get-ChildItem -Recurse ./publish/service-msi
-
-        Write-Host "=== WATCHDOG MSI FOLDER ==="
-        Get-ChildItem -Recurse ./publish/watchdog-msi
-
-
     # ============================
-    # Generate MSI installers (WiX v3)
+    # Generate MSI installers
     # ============================
     - name: Generate MSI installers
       shell: pwsh
@@ -163,7 +180,7 @@ jobs:
         $servicePath = Join-Path $root "publish/service-msi"
         $watchdogPath = Join-Path $root "publish/watchdog-msi"
 
-        # Move EXEs out of the harvested folders so heat doesn't include them
+        # Move EXEs out of harvested folders
         $serviceExe = Join-Path $servicePath "ObservatorySafety.Service.exe"
         $watchdogExe = Join-Path $watchdogPath "ObservatorySafety.Watchdog.exe"
 
@@ -173,21 +190,21 @@ jobs:
         New-Item -ItemType Directory -Path $servicePayload -Force | Out-Null
         New-Item -ItemType Directory -Path $watchdogPayload -Force | Out-Null
 
-        Get-ChildItem $servicePath -File | Where-Object { $_.Name -ne "ObservatorySafety.Service.exe" } | `
+        Get-ChildItem $servicePath -File | Where-Object { $_.Name -ne "ObservatorySafety.Service.exe" } |
           ForEach-Object { Move-Item $_.FullName $servicePayload -Force }
 
-        Get-ChildItem $watchdogPath -File | Where-Object { $_.Name -ne "ObservatorySafety.Watchdog.exe" } | `
+        Get-ChildItem $watchdogPath -File | Where-Object { $_.Name -ne "ObservatorySafety.Watchdog.exe" } |
           ForEach-Object { Move-Item $_.FullName $watchdogPayload -Force }
 
-        # Harvest components (payload only, no EXE)
+        # Harvest components
         heat dir $servicePayload -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
         heat dir $watchdogPayload -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
 
-        # Compile Product + Components, passing EXE paths explicitly
+        # Compile WiX
         candle -dServiceExePath="$serviceExe" wix/Product.Service.wxs wix/generated/ServiceComponents.wxs -o wix/generated/
         candle -dWatchdogExePath="$watchdogExe" wix/Product.Watchdog.wxs wix/generated/WatchdogComponents.wxs -o wix/generated/
 
-        # Link into MSIs, binding SourceDir to payload folders
+        # Link MSIs
         light -b $servicePayload wix/generated/Product.Service.wixobj wix/generated/ServiceComponents.wixobj -o publish/ObservatorySafety.Service.msi
         light -b $watchdogPayload wix/generated/Product.Watchdog.wixobj wix/generated/WatchdogComponents.wixobj -o publish/ObservatorySafety.Watchdog.msi
 
