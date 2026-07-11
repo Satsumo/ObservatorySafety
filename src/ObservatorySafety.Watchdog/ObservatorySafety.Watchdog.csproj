@@ -4,6 +4,24 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Disable implicit content items so we can explicitly include appsettings.json -->
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
+
+    <!-- Single-file EXE publishing -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+
+    <!-- Required for Windows Services and native dependencies -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+
+    <!-- Avoid trimming because it breaks reflection and config loading -->
+    <PublishTrimmed>false</PublishTrimmed>
+
+    <!-- Optional: reduces globalization footprint -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+
     <UserSecretsId>dotnet-ObservatorySafety.Watchdog-5ad8d722-5c94-4c2b-a630-efb0eca23521</UserSecretsId>
   </PropertyGroup>
 
