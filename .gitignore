@@ -365,3 +365,4 @@ FodyWeavers.xsd
 /src/ObservatorySafety.Watchdog/appsettings.Production.json
 /src/ObservatorySafety.Service/appsettings.Development.json
 /src/ObservatorySafety.Service/appsettings.Production.json
+/Directory.Build.props
