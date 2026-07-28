@@ -9,16 +9,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ObservatorSafety.NINA\ObservatorSafety.NINA.csproj" />
+    <ProjectReference Include="..\ObservatorSafety.NINA\ObservatorSafety.NINA.csproj" />
     <ProjectReference Include="..\ObservatorySafety.Core\ObservatorySafety.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="ASCOM.DeviceInterfaces">
-      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\ASCOM\Platform 6 Developer Components\Components\Platform6\ASCOM.DeviceInterfaces.dll</HintPath>
+      <HintPath>..\..\lib\ASCOM.DeviceInterfaces.dll</HintPath>
+      <Private>true</Private>
     </Reference>
+
     <Reference Include="ASCOM.DriverAccess">
-      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\ASCOM\Platform 6 Developer Components\Components\Platform6\ASCOM.DriverAccess.dll</HintPath>
+      <HintPath>..\..\lib\ASCOM.DriverAccess.dll</HintPath>
+      <Private>true</Private>
     </Reference>
   </ItemGroup>
 
