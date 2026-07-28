@@ -40,6 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\ObservatorSafety.NINA\ObservatorSafety.NINA.csproj" />
     <ProjectReference Include="..\ObservatorySafety.Infrastructure\ObservatorySafety.Infrastructure.csproj" />
     <ProjectReference Include="..\ObservatorySafety.Core\ObservatorySafety.Core.csproj" />
   </ItemGroup>

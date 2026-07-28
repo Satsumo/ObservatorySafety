@@ -1,11 +1,12 @@
-using System.Reflection;
-
-using ObservatorySafety.Watchdog.Alerts;
+using ObservatorySafety.Infrastructure.Alerts;
+using ObservatorySafety.Infrastructure.Options;
 using ObservatorySafety.Watchdog.Infrastructure;
 using ObservatorySafety.Watchdog.Services;
 
 using Serilog;
 using Serilog.Settings.Configuration;
+
+using System.Reflection;
 
 namespace ObservatorySafety.Watchdog
 {
@@ -24,6 +25,9 @@ namespace ObservatorySafety.Watchdog
       var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
       Console.WriteLine($"Executable directory: {exeDir}");
 
+      var baseDir = Directory.GetCurrentDirectory();
+      Console.WriteLine($"Base directory: {baseDir}");
+
       var env = Environment.GetEnvironmentVariable("OBSERVATORY_ENVIRONMENT") ?? "Production";
 
       try
@@ -32,7 +36,7 @@ namespace ObservatorySafety.Watchdog
         // 1. Build configuration manually BEFORE host is built
         //
         var configuration = new ConfigurationBuilder()
-            .SetBasePath(exeDir)
+            .SetBasePath(baseDir)
             .AddJsonFile("appsettings.json", optional: false)
             .AddJsonFile($"appsettings.{env}.json", optional: true)
             .Build();
@@ -63,7 +67,7 @@ namespace ObservatorySafety.Watchdog
                           .ConfigureAppConfiguration((ctx, cfg) =>
                           {
                             Console.WriteLine("Configuring app configuration…");
-                            cfg.SetBasePath(exeDir);
+                            cfg.SetBasePath(baseDir);
 
                             cfg.AddJsonFile("appsettings.json", optional: false);
                             cfg.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true);
@@ -71,6 +75,10 @@ namespace ObservatorySafety.Watchdog
                           .ConfigureServices((context, services) =>
                           {
                             var configuration = context.Configuration;
+
+                            services.Configure<EmailAlertOptions>(context.Configuration.GetSection("Email"));
+                            services.Configure<WhatsAppAlertOptions>(context.Configuration.GetSection("WhatsApp"));
+                            services.Configure<PushOverAlertOptions>(context.Configuration.GetSection("PushOver"));
 
                             services.AddSingleton<LogTailer>();
 
@@ -80,9 +88,8 @@ namespace ObservatorySafety.Watchdog
 
                             services.AddSingleton<IAlertService>(sp =>
                             {
-                              var config = sp.GetRequiredService<IConfiguration>();
                               var logger = sp.GetRequiredService<ILogger<CompositeAlertService>>();
-                              var composite = new CompositeAlertService(logger, config);
+                              var composite = new CompositeAlertService(logger);
 
                               composite.AddAlertService("Pushover", sp.GetRequiredService<PushoverAlertService>());
                               composite.AddAlertService("Email", sp.GetRequiredService<EmailAlertService>());

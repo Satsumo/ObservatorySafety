@@ -30,21 +30,32 @@ namespace ObservatorySafety.Core
         Content = new StringContent("{}", Encoding.UTF8, "application/json")
       };
 
-      _logger.Log(LogLevel.Debug, $"=== REQUEST ===\nBaseAddress: {_http.BaseAddress}\n" +
-        $"RequestUri: {req.RequestUri}\n" +
-        $"Headers:\n{req.Headers}\n" +
-        $"Content Headers:\n{req.Content.Headers}\n" +
-        $"Body:\n{await req.Content.ReadAsStringAsync()}");
+      _logger.Log(LogLevel.Debug, "=== REQUEST ===\nBaseAddress: {req.BaseAddress}\n" +
+        "RequestUri: {req.RequestUri}\n" +
+        "Headers:\n{req.Headers}\n" +
+        "Content Headers:\n{req.Content.Headers}\n" +
+        "Body:\n{await req.Content.ReadAsStringAsync()}",
+        _http.BaseAddress,
+        req.RequestUri,
+        req.Headers,
+        req.Content.Headers,
+        await req.Content.ReadAsStringAsync()
+        );
 
       var resp = await _http.SendAsync(req);
       resp.EnsureSuccessStatusCode();
 
       var requestContent = await resp.Content.ReadAsStringAsync();
 
-      _logger.Log(LogLevel.Debug, $"=== RESPONSE ===\nStatus: {resp.StatusCode}\n" +
-        $"Reason: {resp.ReasonPhrase}\n" +
-        $"Response Headers:\n{resp.Headers}\n" +
-        $"Response Body:\n{requestContent}");
+      _logger.Log(LogLevel.Debug, "=== RESPONSE ===\nStatus: {resp.StatusCode}\n" +
+        "Reason: {resp.ReasonPhrase}\n" +
+        "Response Headers:\n{resp.Headers}\n" +
+        "Response Body:\n{requestContent}",
+        resp.StatusCode,
+        resp.ReasonPhrase,
+        resp.Headers,
+        requestContent
+        );
 
       return resp;
     }

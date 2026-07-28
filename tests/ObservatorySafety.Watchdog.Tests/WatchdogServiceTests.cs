@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using NUnit.Framework;
 
-using ObservatorySafety.Watchdog.Alerts;
+using ObservatorySafety.Infrastructure.Alerts;
 using ObservatorySafety.Watchdog.Infrastructure;
 using ObservatorySafety.Watchdog.Services;
 

@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 
 using ObservatorySafety.Core;
-using ObservatorySafety.Core.Model;
+using ObservatorySafety.NINA;
+using ObservatorySafety.NINA.Model;
 
 namespace ObservatorySafety.Infrastructure.Simulation;
 
@@ -9,7 +10,7 @@ namespace ObservatorySafety.Infrastructure.Simulation;
 /// A deterministic mock of INinaClient for integration testing.
 /// Tracks all calls and never touches real hardware or HTTP.
 /// </summary>
-public class SimulatedClient : IAstronomyApplicationClient
+public class SimulatedClient : INinaClient
 {
   private readonly ILogger<SimulatedClient> _logger;
   public SimulatedClient(ILogger<SimulatedClient> logger)
@@ -33,7 +34,7 @@ public class SimulatedClient : IAstronomyApplicationClient
     return Task.FromResult(true);
   }
 
-  public Task<EquipmentInfoEnvelope> GetEquipmentInfoAsync()
+  public Task<EquipmentInfoEnvelope?> GetEquipmentInfoAsync()
   {
     GetMountInfoCount++;
     AddCallLog("GetMountInfo");
@@ -52,7 +53,7 @@ public class SimulatedClient : IAstronomyApplicationClient
       Success = true,
       Type = "EquipmentInfo"
     };
-    return Task.FromResult(envelope);
+    return Task.FromResult<EquipmentInfoEnvelope?>(envelope);
   }
 
   public Task StopSequenceAsync()

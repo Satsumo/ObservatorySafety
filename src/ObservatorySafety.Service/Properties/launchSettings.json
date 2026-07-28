@@ -4,7 +4,8 @@
       "commandName": "Project",
       "commandLineArgs": "\"--console\" \r\n\"--logging-minimumLevel=Debug\"",
       "environmentVariables": {
-        "DOTNET_ENVIRONMENT": "Development"
+        "DOTNET_ENVIRONMENT": "Development",
+        "OBSERVATORY_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true
     },
@@ -12,7 +13,8 @@
       "commandName": "Project",
       "commandLineArgs": "\"--console\" \r\n\"--dry-run\" \r\n\"--logging-minimumLevel=Debug\"",
       "environmentVariables": {
-        "DOTNET_ENVIRONMENT": "Development"
+        "DOTNET_ENVIRONMENT": "Development",
+        "OBSERVATORY_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true
     },
@@ -20,7 +22,8 @@
       "commandName": "Project",
       "commandLineArgs": "\"--console\" \r\n\"--dry-run\" \r\n\"--simulate-power-loss\" \r\n\"--logging-minimumLevel=Debug\"",
       "environmentVariables": {
-        "DOTNET_ENVIRONMENT": "Development"
+        "DOTNET_ENVIRONMENT": "Development",
+        "OBSERVATORY_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true
     }

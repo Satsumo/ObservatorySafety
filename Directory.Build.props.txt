@@ -1,5 +1,0 @@
-<Project>
-  <PropertyGroup>
-    <BaseOutputPath>C:\Users\satsa\Documents\VisualStudio\bin\</BaseOutputPath>
-  </PropertyGroup>
-</Project>

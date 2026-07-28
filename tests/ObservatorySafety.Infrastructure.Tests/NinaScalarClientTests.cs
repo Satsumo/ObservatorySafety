@@ -5,7 +5,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 using ObservatorySafety.Core;
-using ObservatorySafety.Core.Model;
+using ObservatorySafety.NINA;
+using ObservatorySafety.NINA.Model;
 
 namespace ObservatorySafety.Infrastructure.Tests;
 
@@ -13,7 +14,7 @@ namespace ObservatorySafety.Infrastructure.Tests;
 public class NinaScalarClientTests
 {
   private Mock<IHttpService> _mockHttpService;
-  private NinaScalarClient _client;
+  private NinaClient _client;
 
   [SetUp]
   public void Setup()
@@ -26,7 +27,7 @@ public class NinaScalarClientTests
       MountParkTimeThresholdSeconds = 2
     };
 
-    _client = new NinaScalarClient(NullLogger<NinaScalarClient>.Instance, _mockHttpService.Object, equipmentOptions);
+    _client = new NinaClient(NullLogger<NinaClient>.Instance, _mockHttpService.Object, equipmentOptions);
   }
 
   [Test]
@@ -52,41 +53,41 @@ public class NinaScalarClientTests
       Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(envelope))
     };  
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_VERSION))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_VERSION))
       .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_EQUIPMENT_INFO))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_EQUIPMENT_INFO))
       .ReturnsAsync(equipmentResponse);
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_STOP_SEQUENCE))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_STOP_SEQUENCE))
       .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_PARK_MOUNT))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_PARK_MOUNT))
       .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_WARM_CAMERA))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_WARM_CAMERA))
       .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_CLOSE_DOME))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_CLOSE_DOME))
       .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
 
     await _client.ExecuteShutdownAsync(new ShutdownCommand(true, true, true, true));
 
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_VERSION), Times.Exactly(1));
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_STOP_SEQUENCE), Times.Exactly(1));
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_PARK_MOUNT), Times.Exactly(1));
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_WARM_CAMERA), Times.Exactly(1));
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_CLOSE_DOME), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_VERSION), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_STOP_SEQUENCE), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_PARK_MOUNT), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_WARM_CAMERA), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_CLOSE_DOME), Times.Exactly(1));
 
   }
 
   [Test]
   public void ShutdownSequence_ThrowsOnNonSuccessStatusCode()
   {
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_VERSION))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_VERSION))
         .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_STOP_SEQUENCE))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_STOP_SEQUENCE))
         .Throws(new Exception("Failed to call stop sequence endpoint"));
 
     var ex = Assert.ThrowsAsync<Exception>(async () =>
@@ -95,11 +96,11 @@ public class NinaScalarClientTests
 
     Assert.That(ex.Message, Is.EqualTo("Failed to call stop sequence endpoint"));
 
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_VERSION), Times.Exactly(1));
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_STOP_SEQUENCE), Times.Exactly(1));
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_PARK_MOUNT), Times.Never());
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_WARM_CAMERA), Times.Never());
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_CLOSE_DOME), Times.Never());
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_VERSION), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_STOP_SEQUENCE), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_PARK_MOUNT), Times.Never());
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_WARM_CAMERA), Times.Never());
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_CLOSE_DOME), Times.Never());
   }
 
   [Test]
@@ -125,16 +126,16 @@ public class NinaScalarClientTests
       Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(envelope))
     };
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_VERSION))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_VERSION))
       .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_EQUIPMENT_INFO))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_EQUIPMENT_INFO))
       .ReturnsAsync(equipmentResponse);
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_STOP_SEQUENCE))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_STOP_SEQUENCE))
       .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_PARK_MOUNT))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_PARK_MOUNT))
       .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
 
     var ex = Assert.ThrowsAsync<Exception>(async () =>
@@ -143,11 +144,11 @@ public class NinaScalarClientTests
 
     Assert.That(ex.Message, Is.EqualTo("MOUNT PARK FAILURE: Mount did not park or it is still slewing/tracking"));
 
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_VERSION), Times.Exactly(1));
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_STOP_SEQUENCE), Times.Exactly(1));
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_PARK_MOUNT), Times.Exactly(1));
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_WARM_CAMERA), Times.Never);
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_CLOSE_DOME), Times.Never);
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_VERSION), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_STOP_SEQUENCE), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_PARK_MOUNT), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_WARM_CAMERA), Times.Never);
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_CLOSE_DOME), Times.Never);
   }
 
 
@@ -174,31 +175,31 @@ public class NinaScalarClientTests
       Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(envelope))
     };
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_VERSION))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_VERSION))
       .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_EQUIPMENT_INFO))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_EQUIPMENT_INFO))
       .ReturnsAsync(equipmentResponse);
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_STOP_SEQUENCE))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_STOP_SEQUENCE))
       .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_PARK_MOUNT))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_PARK_MOUNT))
       .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_WARM_CAMERA))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_WARM_CAMERA))
       .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
 
-    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_CLOSE_DOME))
+    _mockHttpService.Setup(s => s.Call(HttpMethod.Get, INinaClient.API_CLOSE_DOME))
       .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
 
     await _client.ExecuteShutdownAsync(new ShutdownCommand(true, true, true, true));
 
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_VERSION), Times.Exactly(1));
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_STOP_SEQUENCE), Times.Exactly(1));
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_PARK_MOUNT), Times.Exactly(1));
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_WARM_CAMERA), Times.Exactly(1));
-    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, IAstronomyApplicationClient.API_CLOSE_DOME), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_VERSION), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_STOP_SEQUENCE), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_PARK_MOUNT), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_WARM_CAMERA), Times.Exactly(1));
+    _mockHttpService.Verify(s => s.Call(HttpMethod.Get, INinaClient.API_CLOSE_DOME), Times.Exactly(1));
   }
 
 }

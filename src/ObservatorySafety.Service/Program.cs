@@ -1,14 +1,26 @@
-using System.Reflection;
-
 using Microsoft.Extensions.Options;
 
+using ObservatorSafety.NINA;
+
 using ObservatorySafety.Core;
+using ObservatorySafety.Core.Abstractions;
+
+using ObservatorySafety.Core.Routing;
+using ObservatorySafety.Core.Status;
 using ObservatorySafety.Infrastructure;
+using ObservatorySafety.Infrastructure.Alerts;
+using ObservatorySafety.Infrastructure.ASCOM;
+using ObservatorySafety.Infrastructure.Configuration;
+using ObservatorySafety.Infrastructure.Handler;
+using ObservatorySafety.Infrastructure.Monitor;
+using ObservatorySafety.Infrastructure.Options;
 using ObservatorySafety.Infrastructure.Simulation;
-using ObservatorySafety.Service;
+using ObservatorySafety.NINA;
 
 using Serilog;
 using Serilog.Settings.Configuration;
+
+using System.Reflection;
 
 static class Program
 {
@@ -28,10 +40,18 @@ static class Program
     Console.WriteLine($"dryRun = {dryRun}");
     Console.WriteLine($"simulatePowerLoss = {simulatePowerLoss}");
 
-    var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+    var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+    if (exeDir == null)
+    {
+      exeDir = AppContext.BaseDirectory;
+    }
     Console.WriteLine($"Executable directory: {exeDir}");
 
+    var baseDir = Directory.GetCurrentDirectory();
+    Console.WriteLine($"Base directory: {baseDir}");
+
     var env = Environment.GetEnvironmentVariable("OBSERVATORY_ENVIRONMENT") ?? "Production";
+    Console.WriteLine($"Environment: {env}");
 
     try
     {
@@ -39,7 +59,7 @@ static class Program
       // 1. Build configuration manually BEFORE host is built
       //
       var configuration = new ConfigurationBuilder()
-          .SetBasePath(exeDir)
+          .SetBasePath(baseDir)
           .AddJsonFile("appsettings.json", optional: false)
           .AddJsonFile($"appsettings.{env}.json", optional: true)
           .Build();
@@ -48,8 +68,8 @@ static class Program
       // 2. Initialise Serilog BEFORE host is built
       //
       var options = new ConfigurationReaderOptions(
-        typeof(ConsoleLoggerConfigurationExtensions).Assembly,
-        typeof(FileLoggerConfigurationExtensions).Assembly
+          typeof(ConsoleLoggerConfigurationExtensions).Assembly,
+          typeof(FileLoggerConfigurationExtensions).Assembly
       );
 
       Log.Logger = new LoggerConfiguration()
@@ -62,119 +82,150 @@ static class Program
       // 3. Build host
       //
       var builder = Host.CreateDefaultBuilder(args)
-                        .ConfigureLogging(logging =>
-                        {
-                          logging.ClearProviders();   // Ensure Serilog is the ONLY provider
-                        })
-                        .UseSerilog(Log.Logger)       // Use already-initialised Serilog
-                        .ConfigureAppConfiguration((ctx, cfg) =>
-                        {
-                          Console.WriteLine("Configuring app configuration…");
-                          cfg.SetBasePath(exeDir);
+          .ConfigureLogging(logging =>
+          {
+            logging.ClearProviders();   // Ensure Serilog is the ONLY provider
+          })
+          .UseSerilog(Log.Logger)
+          .ConfigureAppConfiguration((ctx, cfg) =>
+          {
+            Console.WriteLine("Configuring app configuration…");
+            cfg.SetBasePath(baseDir);
 
-                          cfg.AddJsonFile("appsettings.json", optional: false);
-                          cfg.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true);
-                        })
-                        .ConfigureServices((ctx, services) =>
-                        {
-                          Console.WriteLine("Configuring services…");
+            cfg.AddJsonFile("appsettings.json", optional: false);
+            cfg.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true);
+          })
+          .ConfigureServices((ctx, services) =>
+          {
+            Console.WriteLine("Configuring services…");
 
-                          services.Configure<NinaOptions>(ctx.Configuration.GetSection("Nina"));
-                          services.Configure<SafetyOptions>(ctx.Configuration.GetSection("Safety"));
-                          services.Configure<EquipmentOptions>(ctx.Configuration.GetSection("Equipment"));
+            //
+            // Options
+            //
+            services.Configure<NinaOptions>(ctx.Configuration.GetSection("Nina"));
+            services.Configure<DarkDragonOptions>(ctx.Configuration.GetSection("DarkDragon"));
+            services.Configure<DragonflyOptions>(ctx.Configuration.GetSection("Dragonfly"));
+            services.Configure<EquipmentOptions>(ctx.Configuration.GetSection("Equipment"));
+            services.Configure<USBRelaySwitchHandlerOptions>(ctx.Configuration.GetSection("USBRelaySwitch"));
+            services.Configure<EmailAlertOptions>(ctx.Configuration.GetSection("Email"));
+            services.Configure<WhatsAppAlertOptions>(ctx.Configuration.GetSection("WhatsApp"));
+            services.Configure<PushOverAlertOptions>(ctx.Configuration.GetSection("PushOver"));
 
-                          services.AddSingleton<ShutdownOrchestrator>();
+            //
+            // Astronomy client (NINA or simulated)
+            //
+            services.AddSingleton<INinaClient>(sp =>
+            {
+              Console.WriteLine("Creating INinaClient…");
 
-                          services.AddSingleton<IHttpService>(s =>
-                          {
-                            Console.WriteLine("Creating IHttpService…");
+              if (dryRun)
+              {
+                Console.WriteLine("Using SimulatedClient (dry-run mode).");
+                var logger = sp.GetRequiredService<ILogger<SimulatedClient>>();
+                return new SimulatedClient(logger);
+              }
+              else
+              {
+                Console.WriteLine("Creating NINA HttpService…");
+                var ninaOpts = sp.GetRequiredService<IOptions<NinaOptions>>().Value;
+                var httpService = new HttpService(sp.GetRequiredService<ILogger<HttpService>>(), ninaOpts.BaseUrl, ninaOpts.ApiKey);
 
-                            var ninaOpts = s.GetRequiredService<IOptions<NinaOptions>>().Value;
-                            var logger = s.GetRequiredService<ILogger<HttpService>>();
-                            return new HttpService(logger, ninaOpts.BaseUrl, ninaOpts.ApiKey);
-                          });
+                var equipmentOptions = sp.GetRequiredService<IOptions<EquipmentOptions>>().Value;
+                var logger = sp.GetRequiredService<ILogger<NinaClient>>();
 
-                          services.AddSingleton<IAstronomyApplicationClient>(sp =>
-                          {
-                            Console.WriteLine("Creating IAstronomyApplicationClient…");
+                return new NinaClient(logger, httpService, equipmentOptions);
+              }
+            });
 
-                            if (dryRun)
-                            {
-                              Console.WriteLine("Using SimulatedClient (dry-run mode).");
-                              var logger = sp.GetRequiredService<ILogger<SimulatedClient>>();
-                              return new SimulatedClient(logger);
-                            }
-                            else
-                            {
-                              var httpService = sp.GetRequiredService<IHttpService>();
-                              var equipmentOptions = sp.GetRequiredService<IOptions<EquipmentOptions>>().Value;
-                              var logger = sp.GetRequiredService<ILogger<NinaScalarClient>>();
+            // Alert servcices
+            services.AddSingleton<PushoverAlertService>();
+            services.AddSingleton<EmailAlertService>();
+            services.AddSingleton<WhatsAppAlertService>();
+            services.AddSingleton<IAlertService>(sp =>
+            {
+              var logger = sp.GetRequiredService<ILogger<CompositeAlertService>>();
+              var composite = new CompositeAlertService(logger);
 
-                              return new NinaScalarClient(logger, httpService, equipmentOptions);
-                            }
-                          });
+              composite.AddAlertService("Pushover", sp.GetRequiredService<PushoverAlertService>());
+              composite.AddAlertService("Email", sp.GetRequiredService<EmailAlertService>());
+              composite.AddAlertService("WhatsApp", sp.GetRequiredService<WhatsAppAlertService>());
 
-                          services.AddSingleton<IPowerStatusProvider>(psp =>
-                          {
-                            Console.WriteLine("Creating IPowerStatusProvider…");
+              return composite;
+            });
 
-                            if (simulatePowerLoss)
-                            {
-                              Console.WriteLine("Using SimulatedPowerLossPowerStatusProvider.");
-                              var logger = psp.GetRequiredService<ILogger<SimulatedPowerLossPowerStatusProvider>>();
-                              return new SimulatedPowerLossPowerStatusProvider(logger);
-                            }
-                            else
-                            {
-                              var logger = psp.GetRequiredService<ILogger<WmiPowerStatusProvider>>();
-                              return new WmiPowerStatusProvider(logger);
-                            }
-                          });
+            //
+            // Monitors
+            //
+            services.AddSingleton<IStatusMonitor>(sp =>
+            {
+              if (simulatePowerLoss)
+              {
+                Console.WriteLine("Using SimulatedPowerLossPowerStatusMonitor.");
+                var logger = sp.GetRequiredService<ILogger<SimulatedPowerLossPowerStatusMonitor>>();
+                return new SimulatedPowerLossPowerStatusMonitor(logger);
+              }
+              else
+              {
+                var logger = sp.GetRequiredService<ILogger<WmiPowerStatusMonitor>>();
+                var options = sp.GetRequiredService<IOptions<EquipmentOptions>>();
+                return new WmiPowerStatusMonitor(logger, options);
+              }
+            });
 
-                          //
-                          // Heartbeat hosted service
-                          //
-                          services.AddHostedService<SafetyHeartbeatService>();
+            services.AddSingleton<IStatusMonitor, NinaMonitor>();
+            services.AddSingleton<IStatusMonitor, DragomflyMonitor>(sp =>
+            {
+              var options = sp.GetRequiredService<IOptions<DragonflyOptions>>();
+              var ascomClient = new AscomClient(sp.GetRequiredService<ILogger<AscomClient>>(), options.Value.AscomID);
 
-                          //
-                          // PowerMonitorService
-                          //
-                          services.AddSingleton<PowerMonitorService>(pms =>
-                          {
-                            Console.WriteLine("Creating PowerMonitorService…");
+              var logger = sp.GetRequiredService<ILogger<DragomflyMonitor>>();
+              return new DragomflyMonitor(logger, options, ascomClient);
+            });
 
-                            var powerStatusProvider = pms.GetRequiredService<IPowerStatusProvider>();
-                            var safetyOpts = pms.GetRequiredService<IOptions<SafetyOptions>>().Value;
-                            var logger = pms.GetRequiredService<ILogger<PowerMonitorService>>();
+            services.AddSingleton<IStatusMonitor>(s =>
+            {
+              Console.WriteLine("Creating NINA HttpService…");
+              var darkDragonOpts = s.GetRequiredService<IOptions<DarkDragonOptions>>();
+              var httpService = new HttpService(s.GetRequiredService<ILogger<HttpService>>(), darkDragonOpts.Value.BaseUrl, darkDragonOpts.Value.ApiKey);
 
-                            return new PowerMonitorService(
-                                          logger,
-                                          powerStatusProvider,
-                                          TimeSpan.FromSeconds(safetyOpts.PowerOutageConfirmedThresholdSeconds)
-                                      );
-                          });
+              var logger = s.GetRequiredService<ILogger<DarkDragonMountParkedMonitor>>();
+              return new DarkDragonMountParkedMonitor(logger, darkDragonOpts, httpService);
+            });
 
-                          services.AddHostedService(sp =>
-                          {
-                            Console.WriteLine("Registering PowerMonitorService hosted service…");
-                            return sp.GetRequiredService<PowerMonitorService>();
-                          });
+            //
+            // Handlers
+            //
+            services.AddSingleton<IStatusHandler, USBRelaySwitchHandler>();
+            services.AddSingleton<IStatusHandler, NotificationHandler>();
 
-                          //
-                          // SafetyService
-                          //
-                          services.AddHostedService(sp =>
-                          {
-                            Console.WriteLine("Registering SafetyService hosted service…");
+            //
+            // StatusRouter
+            //
+            services.AddSingleton<StatusRouter>(sp =>
+            {
+              var logger = sp.GetRequiredService<ILogger<StatusRouter>>();
+              var router = new StatusRouter(logger);
 
-                            var watcher = sp.GetRequiredService<PowerMonitorService>();
-                            var orchestrator = sp.GetRequiredService<ShutdownOrchestrator>();
-                            var nina = sp.GetRequiredService<IAstronomyApplicationClient>();
-                            var logger = sp.GetRequiredService<ILogger<SafetyService>>();
+              var monitors = sp.GetServices<IStatusMonitor>();
+              var handlers = sp.GetServices<IStatusHandler>();
 
-                            return new SafetyService(logger, watcher, orchestrator, nina);
-                          });
-                        });
+              foreach ( var monitor in monitors )
+              {
+                router.RegisterMonitor(monitor);
+              }
+
+              foreach ( var handler in handlers )
+              {
+                router.RegisterHandler(handler);
+              }
+              return router;
+            });
+
+            //
+            // StatusRouterWorker - runs the status router
+            //
+            services.AddHostedService<StatusRouterWorker>();
+          });
 
       if (!runAsConsole)
       {

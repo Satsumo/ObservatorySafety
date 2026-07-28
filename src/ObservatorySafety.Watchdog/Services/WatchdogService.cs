@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.ServiceProcess;
 
-using ObservatorySafety.Watchdog.Alerts;
+using ObservatorySafety.Infrastructure.Alerts;
 using ObservatorySafety.Watchdog.Infrastructure;
 
 namespace ObservatorySafety.Watchdog.Services

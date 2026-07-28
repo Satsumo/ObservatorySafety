@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using NUnit.Framework;
 
-using ObservatorySafety.Watchdog.Alerts;
+using ObservatorySafety.Infrastructure.Alerts;
 
 namespace ObservatorySafety.Watchdog.Tests
 {
@@ -27,7 +27,7 @@ namespace ObservatorySafety.Watchdog.Tests
             var email = new DummyChannel();
             var whatsapp = new DummyChannel();
 
-            var composite = new CompositeAlertService(NullLogger<CompositeAlertService>.Instance, configuration);
+            var composite = new CompositeAlertService(NullLogger<CompositeAlertService>.Instance);
             composite.AddAlertService("Pushover", pushover);
             composite.AddAlertService("Email", email);
             composite.AddAlertService("WhatsApp", whatsapp);

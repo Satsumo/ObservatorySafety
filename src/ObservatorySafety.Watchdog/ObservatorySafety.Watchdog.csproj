@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -39,6 +39,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ObservatorySafety.Core\ObservatorySafety.Core.csproj" />
+    <ProjectReference Include="..\ObservatorySafety.Infrastructure\ObservatorySafety.Infrastructure.csproj" />
   </ItemGroup>
 
   <!-- Explicitly include appsettings.json -->
