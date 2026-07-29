@@ -12,19 +12,26 @@
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
 
+    <!-- Install into 64-bit Program Files -->
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="INSTALLDIR" Name="ObservatorySafety.Watchdog" />
       </Directory>
     </Directory>
 
+    <!-- Main Feature -->
     <Feature Id="MainFeature" Title="ObservatorySafety Watchdog" Level="1">
       <ComponentGroupRef Id="WatchdogComponents" />
       <ComponentRef Id="WatchdogInstaller" />
       <ComponentRef Id="WatchdogConfigComponent" />
     </Feature>
 
-    <Component Id="WatchdogInstaller" Directory="INSTALLDIR">
+    <!-- Windows Service installation -->
+    <Component Id="WatchdogInstaller"
+               Directory="INSTALLDIR"
+               Win64="yes">
+
+      <!-- Main EXE -->
       <File Id="WatchdogExe"
             Source="$(var.WatchdogExePath)"
             KeyPath="yes" />
@@ -56,10 +63,11 @@
           Action="write" />
     </Component>
 
-    <!-- Config component: delete old JSON, then install new -->
+    <!-- Overwrite-safe config component -->
     <Component Id="WatchdogConfigComponent"
                Guid="9f92e734-ce38-409f-87c4-33f8c93f337b"
-               Directory="INSTALLDIR">
+               Directory="INSTALLDIR"
+               Win64="yes">
 
       <!-- Versioned KeyPath -->
       <File Id="WatchdogConfigVersion"
@@ -67,7 +75,7 @@
             Name="appsettings.version"
             KeyPath="yes" />
 
-      <!-- Remove any existing appsettings.json on install -->
+      <!-- Delete old JSON on install -->
       <RemoveFile Id="RemoveOldWatchdogConfig"
                   Name="appsettings.json"
                   On="install"

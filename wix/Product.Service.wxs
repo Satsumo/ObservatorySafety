@@ -12,19 +12,26 @@
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
 
+    <!-- Install into 64-bit Program Files -->
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="INSTALLDIR" Name="ObservatorySafety.Service" />
       </Directory>
     </Directory>
 
+    <!-- Main Feature -->
     <Feature Id="MainFeature" Title="ObservatorySafety Service" Level="1">
       <ComponentGroupRef Id="ServiceComponents" />
       <ComponentRef Id="ServiceInstaller" />
       <ComponentRef Id="ServiceConfigComponent" />
     </Feature>
 
-    <Component Id="ServiceInstaller" Directory="INSTALLDIR">
+    <!-- Windows Service installation -->
+    <Component Id="ServiceInstaller"
+               Directory="INSTALLDIR"
+               Win64="yes">
+
+      <!-- Main EXE -->
       <File Id="ServiceExe"
             Source="$(var.ServiceExePath)"
             KeyPath="yes" />
@@ -56,10 +63,11 @@
           Action="write" />
     </Component>
 
-    <!-- Config component: delete old JSON, then install new -->
+    <!-- Overwrite-safe config component -->
     <Component Id="ServiceConfigComponent"
                Guid="643739ef-3d89-4499-bc46-1c559da260d5"
-               Directory="INSTALLDIR">
+               Directory="INSTALLDIR"
+               Win64="yes">
 
       <!-- Versioned KeyPath -->
       <File Id="ServiceConfigVersion"
@@ -67,7 +75,7 @@
             Name="appsettings.version"
             KeyPath="yes" />
 
-      <!-- Remove any existing appsettings.json on install -->
+      <!-- Delete old JSON on install -->
       <RemoveFile Id="RemoveOldServiceConfig"
                   Name="appsettings.json"
                   On="install"

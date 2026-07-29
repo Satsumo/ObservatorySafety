@@ -123,7 +123,7 @@ jobs:
           --output src/ObservatorySafety.Watchdog/publish-msi
 
     # ============================
-    # Generate versioned KeyPath files
+    # Generate version files
     # ============================
     - name: Generate version files
       shell: pwsh
@@ -132,7 +132,7 @@ jobs:
         "Version=$env:MSI_VERSION" | Out-File src/ObservatorySafety.Watchdog/publish-msi/appsettings.version -Encoding ascii
 
     # ============================
-    # Decode Base64 PFX certificate
+    # Decode PFX certificate
     # ============================
     - name: Decode PFX certificate
       shell: pwsh
@@ -206,8 +206,11 @@ jobs:
         $watchdogJson = Join-Path $watchdogPayload "appsettings.json"
         if (Test-Path $watchdogJson) { Remove-Item $watchdogJson -Force }
 
-        heat dir $servicePayload -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
-        heat dir $watchdogPayload -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
+        # ============================
+        # HEAT (64-bit components)
+        # ============================
+        heat dir $servicePayload -gg -sreg -scom -sfrag -srd -wx64 -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
+        heat dir $watchdogPayload -gg -sreg -scom -sfrag -srd -wx64 -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
 
         candle `
           -dServiceExePath="$serviceExe" `
