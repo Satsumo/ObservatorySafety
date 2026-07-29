@@ -36,7 +36,10 @@
       <!-- Include baseline appsettings.json -->
       <File Id="ServiceConfig"
             Source="$(var.ServiceConfigPath)"
-            Name="appsettings.json" />
+            Name="appsettings.json"
+            KeyPath="no"
+            NeverOverwrite="no"
+            Vital="yes" />
 
       <!-- Install the Windows Service -->
       <ServiceInstall

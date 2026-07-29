@@ -36,7 +36,11 @@
       <!-- Include baseline appsettings.json -->
       <File Id="WatchdogConfig"
             Source="$(var.WatchdogConfigPath)"
-            Name="appsettings.json" />
+            Name="appsettings.json"
+            KeyPath="no"
+            NeverOverwrite="no"
+            Vital="yes" />
+
 
       <!-- Install the Windows Service -->
       <ServiceInstall
