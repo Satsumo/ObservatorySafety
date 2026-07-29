@@ -46,11 +46,7 @@ jobs:
           Write-Host "Patching version in $file to $env:MSI_VERSION"
 
           $content = Get-Content $file -Raw
-
-          # Replace ONLY the Product version, not the XML declaration
           $newContent = $content -replace 'Version="1.0.0.0"', "Version=""$env:MSI_VERSION"""
-
-          # Write back as UTF-8 without BOM
           [System.IO.File]::WriteAllText($file, $newContent, (New-Object System.Text.UTF8Encoding($false)))
         }
 
@@ -68,6 +64,7 @@ jobs:
     # Restore dependencies
     # ============================
     - name: Restore dependencies
+      shell: pwsh
       run: |
         dotnet restore src/ObservatorySafety.Service/ObservatorySafety.Service.csproj
         dotnet restore src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj
@@ -76,89 +73,91 @@ jobs:
     # Build Service project
     # ============================
     - name: Build Service
-      run: >
-        dotnet build src/ObservatorySafety.Service/ObservatorySafety.Service.csproj 
-        --configuration Release 
-        /p:Version=$env:MSI_VERSION
-        /p:FileVersion=$env:MSI_VERSION
-        /p:AssemblyVersion=$env:MSI_VERSION
+      shell: pwsh
+      run: |
+        dotnet build src/ObservatorySafety.Service/ObservatorySafety.Service.csproj `
+          --configuration Release `
+          /p:Version=$env:MSI_VERSION `
+          /p:FileVersion=$env:MSI_VERSION `
+          /p:AssemblyVersion=$env:MSI_VERSION
 
     # ============================
     # Build Watchdog project
     # ============================
     - name: Build Watchdog
-      run: >
-        dotnet build src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj 
-        --configuration Release
-        /p:Version=$env:MSI_VERSION
-        /p:FileVersion=$env:MSI_VERSION
-        /p:AssemblyVersion=$env:MSI_VERSION
-            
+      shell: pwsh
+      run: |
+        dotnet build src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj `
+          --configuration Release `
+          /p:Version=$env:MSI_VERSION `
+          /p:FileVersion=$env:MSI_VERSION `
+          /p:AssemblyVersion=$env:MSI_VERSION
+
     # ============================
     # Publish single-file EXEs
     # ============================
     - name: Publish Service EXE
       shell: pwsh
-      run: >
-        dotnet publish src/ObservatorySafety.Service/ObservatorySafety.Service.csproj
-        --configuration Release
-        --runtime win-x64
-        --self-contained true
-        /p:Version=$env:MSI_VERSION
-        /p:FileVersion=$env:MSI_VERSION
-        /p:AssemblyVersion=$env:MSI_VERSION
-        /p:PublishSingleFile=true
-        /p:IncludeNativeLibrariesForSelfExtract=true
-        /p:PublishTrimmed=false
-        /p:UseWindowsService=false
-        /p:UseAppHost=true
-        --output ./publish/service
+      run: |
+        dotnet publish src/ObservatorySafety.Service/ObservatorySafety.Service.csproj `
+          --configuration Release `
+          --runtime win-x64 `
+          --self-contained true `
+          /p:Version=$env:MSI_VERSION `
+          /p:FileVersion=$env:MSI_VERSION `
+          /p:AssemblyVersion=$env:MSI_VERSION `
+          /p:PublishSingleFile=true `
+          /p:IncludeNativeLibrariesForSelfExtract=true `
+          /p:PublishTrimmed=false `
+          /p:UseWindowsService=false `
+          /p:UseAppHost=true `
+          --output ./publish/service
 
     - name: Publish Watchdog EXE
       shell: pwsh
-      run: >
-        dotnet publish src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj
-        --configuration Release
-        --runtime win-x64
-        --self-contained true
-        /p:Version=$env:MSI_VERSION
-        /p:FileVersion=$env:MSI_VERSION
-        /p:AssemblyVersion=$env:MSI_VERSION
-        /p:PublishSingleFile=true
-        /p:IncludeNativeLibrariesForSelfExtract=true
-        /p:PublishTrimmed=false
-        /p:UseWindowsService=false
-        /p:UseAppHost=true
-        --output ./publish/watchdog
+      run: |
+        dotnet publish src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj `
+          --configuration Release `
+          --runtime win-x64 `
+          --self-contained true `
+          /p:Version=$env:MSI_VERSION `
+          /p:FileVersion=$env:MSI_VERSION `
+          /p:AssemblyVersion=$env:MSI_VERSION `
+          /p:PublishSingleFile=true `
+          /p:IncludeNativeLibrariesForSelfExtract=true `
+          /p:PublishTrimmed=false `
+          /p:UseWindowsService=false `
+          /p:UseAppHost=true `
+          --output ./publish/watchdog
 
     # ============================
     # Publish loose files for MSI
     # ============================
     - name: Publish Service (MSI loose files)
       shell: pwsh
-      run: >
-        dotnet publish src/ObservatorySafety.Service/ObservatorySafety.Service.csproj
-        --configuration Release
-        --runtime win-x64
-        --self-contained true
-        /p:Version=$env:MSI_VERSION
-        /p:FileVersion=$env:MSI_VERSION
-        /p:AssemblyVersion=$env:MSI_VERSION
-        /p:PublishSingleFile=false
-        --output ./publish/service-msi
+      run: |
+        dotnet publish src/ObservatorySafety.Service/ObservatorySafety.Service.csproj `
+          --configuration Release `
+          --runtime win-x64 `
+          --self-contained true `
+          /p:Version=$env:MSI_VERSION `
+          /p:FileVersion=$env:MSI_VERSION `
+          /p:AssemblyVersion=$env:MSI_VERSION `
+          /p:PublishSingleFile=false `
+          --output ./publish/service-msi
 
     - name: Publish Watchdog (MSI loose files)
       shell: pwsh
-      run: >
-        dotnet publish src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj
-        --configuration Release
-        --runtime win-x64
-        --self-contained true
-        /p:Version=$env:MSI_VERSION
-        /p:FileVersion=$env:MSI_VERSION
-        /p:AssemblyVersion=$env:MSI_VERSION
-        /p:PublishSingleFile=false
-        --output ./publish/watchdog-msi
+      run: |
+        dotnet publish src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj `
+          --configuration Release `
+          --runtime win-x64 `
+          --self-contained true `
+          /p:Version=$env:MSI_VERSION `
+          /p:FileVersion=$env:MSI_VERSION `
+          /p:AssemblyVersion=$env:MSI_VERSION `
+          /p:PublishSingleFile=false `
+          --output ./publish/watchdog-msi
 
     # ============================
     # Decode Base64 PFX certificate
@@ -212,7 +211,6 @@ jobs:
         $servicePath = Join-Path $root "publish/service-msi"
         $watchdogPath = Join-Path $root "publish/watchdog-msi"
 
-        # Move EXEs out of harvested folders
         $serviceExe = Join-Path $servicePath "ObservatorySafety.Service.exe"
         $watchdogExe = Join-Path $watchdogPath "ObservatorySafety.Watchdog.exe"
 
@@ -228,15 +226,12 @@ jobs:
         Get-ChildItem $watchdogPath -File | Where-Object { $_.Name -ne "ObservatorySafety.Watchdog.exe" } |
           ForEach-Object { Move-Item $_.FullName $watchdogPayload -Force }
 
-        # Harvest components
         heat dir $servicePayload -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
         heat dir $watchdogPayload -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
 
-        # Compile WiX
         candle -dServiceExePath="$serviceExe" wix/Product.Service.wxs wix/generated/ServiceComponents.wxs -o wix/generated/
         candle -dWatchdogExePath="$watchdogExe" wix/Product.Watchdog.wxs wix/generated/WatchdogComponents.wxs -o wix/generated/
 
-        # Link MSIs
         light -b $servicePayload wix/generated/Product.Service.wixobj wix/generated/ServiceComponents.wixobj -o publish/ObservatorySafety.Service.msi
         light -b $watchdogPayload wix/generated/Product.Watchdog.wixobj wix/generated/WatchdogComponents.wixobj -o publish/ObservatorySafety.Watchdog.msi
 
@@ -307,6 +302,5 @@ jobs:
           ./release/watchdog/appsettings.json#appsettings.watchdog.json
           ./release/ObservatorySafety.Service.msi
           ./release/ObservatorySafety.Watchdog.msi
-
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
