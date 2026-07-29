@@ -12,29 +12,23 @@
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
 
-    <!-- REQUIRED ROOT DIRECTORY -->
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFilesFolder">
         <Directory Id="INSTALLDIR" Name="ObservatorySafety.Watchdog" />
       </Directory>
     </Directory>
 
-    <!-- Main Feature -->
     <Feature Id="MainFeature" Title="ObservatorySafety Watchdog" Level="1">
       <ComponentGroupRef Id="WatchdogComponents" />
       <ComponentRef Id="WatchdogInstaller" />
       <ComponentRef Id="WatchdogConfigComponent" />
     </Feature>
 
-    <!-- Windows Service installation -->
     <Component Id="WatchdogInstaller" Directory="INSTALLDIR">
-
-      <!-- Main EXE -->
       <File Id="WatchdogExe"
             Source="$(var.WatchdogExePath)"
             KeyPath="yes" />
 
-      <!-- Install the Windows Service -->
       <ServiceInstall
           Id="ObservatorySafetyWatchdogInstall"
           Name="ObservatorySafety.Watchdog"
@@ -46,7 +40,6 @@
           Vital="yes"
           Account="LocalSystem" />
 
-      <!-- Control service behaviour during MSI install -->
       <ServiceControl
           Id="ObservatorySafetyWatchdogControl"
           Name="ObservatorySafety.Watchdog"
@@ -54,7 +47,6 @@
           Remove="uninstall"
           Wait="yes" />
 
-      <!-- Environment variable -->
       <RegistryValue
           Root="HKLM"
           Key="SYSTEM\CurrentControlSet\Services\ObservatorySafety.Watchdog"
@@ -62,22 +54,26 @@
           Type="multiString"
           Value="OBSERVATORY_ENVIRONMENT=Production"
           Action="write" />
-
     </Component>
 
-    <!-- Overwrite-safe config component -->
-    <!-- GUID stays the same forever -->
+    <!-- Config component: delete old JSON, then install new -->
     <Component Id="WatchdogConfigComponent"
                Guid="9f92e734-ce38-409f-87c4-33f8c93f337b"
                Directory="INSTALLDIR">
 
-      <!-- Versioned companion file (KeyPath) -->
+      <!-- Versioned KeyPath -->
       <File Id="WatchdogConfigVersion"
             Source="$(var.WatchdogVersionPath)"
             Name="appsettings.version"
             KeyPath="yes" />
 
-      <!-- Actual JSON config file (NOT KeyPath) -->
+      <!-- Remove any existing appsettings.json on install -->
+      <RemoveFile Id="RemoveOldWatchdogConfig"
+                  Name="appsettings.json"
+                  On="install"
+                  Directory="INSTALLDIR" />
+
+      <!-- New JSON config file -->
       <File Id="WatchdogConfig"
             Source="$(var.WatchdogConfigPath)"
             Name="appsettings.json"

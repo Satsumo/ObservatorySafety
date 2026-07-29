@@ -12,29 +12,23 @@
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
 
-    <!-- REQUIRED ROOT DIRECTORY -->
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFilesFolder">
         <Directory Id="INSTALLDIR" Name="ObservatorySafety.Service" />
       </Directory>
     </Directory>
 
-    <!-- Main Feature -->
     <Feature Id="MainFeature" Title="ObservatorySafety Service" Level="1">
       <ComponentGroupRef Id="ServiceComponents" />
       <ComponentRef Id="ServiceInstaller" />
       <ComponentRef Id="ServiceConfigComponent" />
     </Feature>
 
-    <!-- Windows Service installation -->
     <Component Id="ServiceInstaller" Directory="INSTALLDIR">
-
-      <!-- Main EXE -->
       <File Id="ServiceExe"
             Source="$(var.ServiceExePath)"
             KeyPath="yes" />
 
-      <!-- Install the Windows Service -->
       <ServiceInstall
           Id="ObservatorySafetyServiceInstall"
           Name="ObservatorySafety.Service"
@@ -46,7 +40,6 @@
           Vital="yes"
           Account="LocalSystem" />
 
-      <!-- Control service behaviour during MSI install -->
       <ServiceControl
           Id="ObservatorySafetyServiceControl"
           Name="ObservatorySafety.Service"
@@ -54,7 +47,6 @@
           Remove="uninstall"
           Wait="yes" />
 
-      <!-- Environment variable -->
       <RegistryValue
           Root="HKLM"
           Key="SYSTEM\CurrentControlSet\Services\ObservatorySafety.Service"
@@ -62,22 +54,26 @@
           Type="multiString"
           Value="OBSERVATORY_ENVIRONMENT=Production"
           Action="write" />
-
     </Component>
 
-    <!-- Overwrite-safe config component -->
-    <!-- GUID stays the same forever -->
+    <!-- Config component: delete old JSON, then install new -->
     <Component Id="ServiceConfigComponent"
                Guid="643739ef-3d89-4499-bc46-1c559da260d5"
                Directory="INSTALLDIR">
 
-      <!-- Versioned companion file (KeyPath) -->
+      <!-- Versioned KeyPath -->
       <File Id="ServiceConfigVersion"
             Source="$(var.ServiceVersionPath)"
             Name="appsettings.version"
             KeyPath="yes" />
 
-      <!-- Actual JSON config file (NOT KeyPath) -->
+      <!-- Remove any existing appsettings.json on install -->
+      <RemoveFile Id="RemoveOldServiceConfig"
+                  Name="appsettings.json"
+                  On="install"
+                  Directory="INSTALLDIR" />
+
+      <!-- New JSON config file -->
       <File Id="ServiceConfig"
             Source="$(var.ServiceConfigPath)"
             Name="appsettings.json"
