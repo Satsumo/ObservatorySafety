@@ -30,28 +30,30 @@ static class Program
 
   public static async Task Main(string[] args)
   {
-    Console.WriteLine("Program.Main starting…");
+    ConsoleLog("Program.Main starting…");
 
     bool runAsConsole = args.Contains(ARG_CONSOLE);
     bool dryRun = args.Contains(ARG_DRY_RUN);
     bool simulatePowerLoss = args.Contains(ARG_SIMULATE_POWER_LOSS);
 
-    Console.WriteLine($"runAsConsole = {runAsConsole}");
-    Console.WriteLine($"dryRun = {dryRun}");
-    Console.WriteLine($"simulatePowerLoss = {simulatePowerLoss}");
+    ConsoleLog($"runAsConsole = {runAsConsole}");
+    ConsoleLog($"dryRun = {dryRun}");
+    ConsoleLog($"simulatePowerLoss = {simulatePowerLoss}");
+
+    Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
     var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
     if (exeDir == null)
     {
       exeDir = AppContext.BaseDirectory;
     }
-    Console.WriteLine($"Executable directory: {exeDir}");
+    ConsoleLog($"Executable directory: {exeDir}");
 
     var baseDir = Directory.GetCurrentDirectory();
-    Console.WriteLine($"Base directory: {baseDir}");
+    ConsoleLog($"Base directory: {baseDir}");
 
     var env = Environment.GetEnvironmentVariable("OBSERVATORY_ENVIRONMENT") ?? "Production";
-    Console.WriteLine($"Environment: {env}");
+    ConsoleLog($"Environment: {env}");
 
     try
     {
@@ -89,7 +91,7 @@ static class Program
           .UseSerilog(Log.Logger)
           .ConfigureAppConfiguration((ctx, cfg) =>
           {
-            Console.WriteLine("Configuring app configuration…");
+            ConsoleLog("Configuring app configuration…");
             cfg.SetBasePath(baseDir);
 
             cfg.AddJsonFile("appsettings.json", optional: false);
@@ -97,7 +99,7 @@ static class Program
           })
           .ConfigureServices((ctx, services) =>
           {
-            Console.WriteLine("Configuring services…");
+            ConsoleLog("Configuring services…");
 
             //
             // Options
@@ -116,17 +118,17 @@ static class Program
             //
             services.AddSingleton<INinaClient>(sp =>
             {
-              Console.WriteLine("Creating INinaClient…");
+              ConsoleLog("Creating INinaClient…");
 
               if (dryRun)
               {
-                Console.WriteLine("Using SimulatedClient (dry-run mode).");
+                ConsoleLog("Using SimulatedClient (dry-run mode).");
                 var logger = sp.GetRequiredService<ILogger<SimulatedClient>>();
                 return new SimulatedClient(logger);
               }
               else
               {
-                Console.WriteLine("Creating NINA HttpService…");
+                ConsoleLog("Creating NINA HttpService…");
                 var ninaOpts = sp.GetRequiredService<IOptions<NinaOptions>>().Value;
                 var httpService = new HttpService(sp.GetRequiredService<ILogger<HttpService>>(), ninaOpts.BaseUrl, ninaOpts.ApiKey);
 
@@ -160,7 +162,7 @@ static class Program
             {
               if (simulatePowerLoss)
               {
-                Console.WriteLine("Using SimulatedPowerLossPowerStatusMonitor.");
+                ConsoleLog("Using SimulatedPowerLossPowerStatusMonitor.");
                 var logger = sp.GetRequiredService<ILogger<SimulatedPowerLossPowerStatusMonitor>>();
                 return new SimulatedPowerLossPowerStatusMonitor(logger);
               }
@@ -184,7 +186,7 @@ static class Program
 
             services.AddSingleton<IStatusMonitor>(s =>
             {
-              Console.WriteLine("Creating NINA HttpService…");
+              ConsoleLog("Creating NINA HttpService…");
               var darkDragonOpts = s.GetRequiredService<IOptions<DarkDragonOptions>>();
               var httpService = new HttpService(s.GetRequiredService<ILogger<HttpService>>(), darkDragonOpts.Value.BaseUrl, darkDragonOpts.Value.ApiKey);
 
@@ -232,25 +234,31 @@ static class Program
         builder.UseWindowsService();
       }
 
-      Console.WriteLine("Building host…");
+      ConsoleLog("Building host…");
       var host = builder.Build();
-      Console.WriteLine("Host built successfully.");
+      ConsoleLog("Host built successfully.");
 
       Log.Information("ObservatorySafety.Service starting. Args:\n{Args}", String.Join("\n", args));
 
-      Console.WriteLine("Starting host.RunAsync()…");
+      ConsoleLog("Starting host.RunAsync()…");
 
       await host.RunAsync();
     }
     catch (Exception ex)
     {
       Log.Fatal(ex, "Fatal startup exception in ObservatorySafety.Service");
-      Console.WriteLine($"Fatal startup exception: {ex}");
+      ConsoleLog($"Fatal startup exception: {ex}");
     }
     finally
     {
       Log.CloseAndFlush();
-      Console.WriteLine("Host shutdown complete.");
+      ConsoleLog("Host shutdown complete.");
+    }
+
+    static void ConsoleLog(string message)
+    {
+      if (Environment.GetCommandLineArgs().Contains("--console"))
+        ConsoleLog(message);
     }
   }
 }

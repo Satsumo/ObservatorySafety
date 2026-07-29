@@ -16,17 +16,19 @@ namespace ObservatorySafety.Watchdog
 
     public static async Task Main(string[] args)
     {
-      Console.WriteLine("Program.Main starting…");
+      ConsoleLog("Program.Main starting…");
 
       bool runAsConsole = args.Contains(ARG_CONSOLE);
 
-      Console.WriteLine($"runAsConsole = {runAsConsole}");
+      ConsoleLog($"runAsConsole = {runAsConsole}");
+
+      Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
       var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-      Console.WriteLine($"Executable directory: {exeDir}");
+      ConsoleLog($"Executable directory: {exeDir}");
 
       var baseDir = Directory.GetCurrentDirectory();
-      Console.WriteLine($"Base directory: {baseDir}");
+      ConsoleLog($"Base directory: {baseDir}");
 
       var env = Environment.GetEnvironmentVariable("OBSERVATORY_ENVIRONMENT") ?? "Production";
 
@@ -66,7 +68,7 @@ namespace ObservatorySafety.Watchdog
                           .UseSerilog(Log.Logger)       // Use already-initialised Serilog
                           .ConfigureAppConfiguration((ctx, cfg) =>
                           {
-                            Console.WriteLine("Configuring app configuration…");
+                            ConsoleLog("Configuring app configuration…");
                             cfg.SetBasePath(baseDir);
 
                             cfg.AddJsonFile("appsettings.json", optional: false);
@@ -106,9 +108,9 @@ namespace ObservatorySafety.Watchdog
           builder.UseWindowsService();
         }
 
-        Console.WriteLine("Building host…");
+        ConsoleLog("Building host…");
         var host = builder.Build();
-        Console.WriteLine("Host built successfully.");
+        ConsoleLog("Host built successfully.");
 
         // Guaranteed startup log (creates the log file)
         Log.Information("ObservatorySafety.Watchdog starting. Args:\n{Args}", String.Join("\n", args));
@@ -117,13 +119,20 @@ namespace ObservatorySafety.Watchdog
       catch (Exception ex)
       {
         Log.Fatal(ex, "Fatal startup exception in ObservatorySafety.Watchdog");
-        Console.WriteLine($"Fatal startup exception: {ex}");
+        ConsoleLog($"Fatal startup exception: {ex}");
       }
       finally
       {
         Log.CloseAndFlush();
-        Console.WriteLine("Host shutdown complete.");
+        ConsoleLog("Host shutdown complete.");
       }
     }
+
+    static void ConsoleLog(string message)
+    {
+      if (Environment.GetCommandLineArgs().Contains("--console"))
+        ConsoleLog(message);
+    }
+
   }
 }
