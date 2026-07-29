@@ -77,10 +77,11 @@
             Name="appsettings.version"
             KeyPath="yes" />
 
-      <!-- Actual JSON config file -->
+      <!-- Actual JSON config file (NOT KeyPath) -->
       <File Id="WatchdogConfig"
             Source="$(var.WatchdogConfigPath)"
-            Name="appsettings.json" />
+            Name="appsettings.json"
+            KeyPath="no" />
     </Component>
 
   </Product>
