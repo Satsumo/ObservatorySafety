@@ -47,7 +47,6 @@
           Account="LocalSystem" />
 
       <!-- Control service behaviour during MSI install -->
-      <!-- No Start attribute → MSI will NOT start the service -->
       <ServiceControl
           Id="ObservatorySafetyServiceControl"
           Name="ObservatorySafety.Service"
@@ -66,16 +65,22 @@
 
     </Component>
 
-    <!-- Force appsettings.json to be overwritten on upgrade -->
-    <!-- IMPORTANT: Generate a NEW GUID for every release -->
+    <!-- Overwrite-safe config component -->
+    <!-- GUID stays the same forever -->
     <Component Id="ServiceConfigComponent"
                Guid="643739ef-3d89-4499-bc46-1c559da260d5"
                Directory="INSTALLDIR">
 
+      <!-- Versioned companion file (KeyPath) -->
+      <File Id="ServiceConfigVersion"
+            Source="$(var.ServiceVersionPath)"
+            Name="appsettings.version"
+            KeyPath="yes" />
+
+      <!-- Actual JSON config file -->
       <File Id="ServiceConfig"
             Source="$(var.ServiceConfigPath)"
-            Name="appsettings.json"
-            KeyPath="yes" />
+            Name="appsettings.json" />
     </Component>
 
   </Product>

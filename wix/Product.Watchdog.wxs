@@ -47,7 +47,6 @@
           Account="LocalSystem" />
 
       <!-- Control service behaviour during MSI install -->
-      <!-- No Start attribute → MSI will NOT start the service -->
       <ServiceControl
           Id="ObservatorySafetyWatchdogControl"
           Name="ObservatorySafety.Watchdog"
@@ -66,16 +65,22 @@
 
     </Component>
 
-    <!-- Force appsettings.json to be overwritten on upgrade -->
-    <!-- IMPORTANT: Generate a NEW GUID for every release -->
+    <!-- Overwrite-safe config component -->
+    <!-- GUID stays the same forever -->
     <Component Id="WatchdogConfigComponent"
                Guid="9f92e734-ce38-409f-87c4-33f8c93f337b"
                Directory="INSTALLDIR">
 
+      <!-- Versioned companion file (KeyPath) -->
+      <File Id="WatchdogConfigVersion"
+            Source="$(var.WatchdogVersionPath)"
+            Name="appsettings.version"
+            KeyPath="yes" />
+
+      <!-- Actual JSON config file -->
       <File Id="WatchdogConfig"
             Source="$(var.WatchdogConfigPath)"
-            Name="appsettings.json"
-            KeyPath="yes" />
+            Name="appsettings.json" />
     </Component>
 
   </Product>
