@@ -10,15 +10,14 @@
       UpgradeCode="A3F9C1E2-6B4D-4F8A-9C2E-1D7B3A9F4C21">
 
     <Package InstallerVersion="500"
-         Compressed="yes"
-         InstallScope="perMachine"
-         Platform="x64" />
+             Compressed="yes"
+             InstallScope="perMachine" />
 
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
 
-    <!-- Install into 64-bit Program Files -->
+    <!-- Install into standard Program Files (x86) -->
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="ProgramFiles64Folder">
+      <Directory Id="ProgramFilesFolder">
         <Directory Id="INSTALLDIR" Name="ObservatorySafety.Service" />
       </Directory>
     </Directory>
@@ -32,8 +31,7 @@
 
     <!-- Windows Service installation -->
     <Component Id="ServiceInstaller"
-               Directory="INSTALLDIR"
-               Win64="yes">
+               Directory="INSTALLDIR">
 
       <!-- Main EXE -->
       <File Id="ServiceExe"
@@ -70,8 +68,7 @@
     <!-- Overwrite-safe config component -->
     <Component Id="ServiceConfigComponent"
                Guid="643739ef-3d89-4499-bc46-1c559da260d5"
-               Directory="INSTALLDIR"
-               Win64="yes">
+               Directory="INSTALLDIR">
 
       <!-- Versioned KeyPath -->
       <File Id="ServiceConfigVersion"

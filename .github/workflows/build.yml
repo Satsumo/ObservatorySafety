@@ -21,9 +21,6 @@ jobs:
       with:
         dotnet-version: '9.0.x'
 
-    # ============================
-    # Generate MSI version
-    # ============================
     - name: Generate MSI version
       shell: pwsh
       run: |
@@ -31,9 +28,6 @@ jobs:
         echo "MSI_VERSION=$version" >> $env:GITHUB_ENV
         Write-Host "MSI Version: $version"
 
-    # ============================
-    # Patch WiX Product Versions
-    # ============================
     - name: Patch WiX Product Versions
       shell: pwsh
       run: |
@@ -50,9 +44,6 @@ jobs:
           [System.IO.File]::WriteAllText($file, $newContent, (New-Object System.Text.UTF8Encoding($false)))
         }
 
-    # ============================
-    # Install WiX Toolset 3.14
-    # ============================
     - name: Install WiX Toolset 3.14
       shell: pwsh
       run: |
@@ -60,18 +51,12 @@ jobs:
         Start-Process .\wix314.exe -ArgumentList "/quiet" -Wait
         echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" >> $env:GITHUB_PATH
 
-    # ============================
-    # Restore dependencies
-    # ============================
     - name: Restore dependencies
       shell: pwsh
       run: |
         dotnet restore src/ObservatorySafety.Service/ObservatorySafety.Service.csproj
         dotnet restore src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj
 
-    # ============================
-    # Build Service project
-    # ============================
     - name: Build Service
       shell: pwsh
       run: |
@@ -81,9 +66,6 @@ jobs:
           /p:FileVersion=$env:MSI_VERSION `
           /p:AssemblyVersion=$env:MSI_VERSION
 
-    # ============================
-    # Build Watchdog project
-    # ============================
     - name: Build Watchdog
       shell: pwsh
       run: |
@@ -93,9 +75,6 @@ jobs:
           /p:FileVersion=$env:MSI_VERSION `
           /p:AssemblyVersion=$env:MSI_VERSION
 
-    # ============================
-    # Publish loose files for MSI
-    # ============================
     - name: Publish Service (MSI loose files)
       shell: pwsh
       run: |
@@ -122,18 +101,12 @@ jobs:
           /p:PublishSingleFile=false `
           --output src/ObservatorySafety.Watchdog/publish-msi
 
-    # ============================
-    # Generate version files
-    # ============================
     - name: Generate version files
       shell: pwsh
       run: |
         "Version=$env:MSI_VERSION" | Out-File src/ObservatorySafety.Service/publish-msi/appsettings.version -Encoding ascii
         "Version=$env:MSI_VERSION" | Out-File src/ObservatorySafety.Watchdog/publish-msi/appsettings.version -Encoding ascii
 
-    # ============================
-    # Decode PFX certificate
-    # ============================
     - name: Decode PFX certificate
       shell: pwsh
       run: |
@@ -142,9 +115,6 @@ jobs:
       env:
         SIGNING_CERT: ${{ secrets.SIGNING_CERT }}
 
-    # ============================
-    # Sign EXEs
-    # ============================
     - name: Sign EXEs
       shell: pwsh
       run: |
@@ -171,9 +141,6 @@ jobs:
       env:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
 
-    # ============================
-    # Generate MSI installers
-    # ============================
     - name: Generate MSI installers
       shell: pwsh
       run: |
@@ -199,18 +166,14 @@ jobs:
           Where-Object { $_.Name -ne "ObservatorySafety.Watchdog.exe" -and $_.Name -ne "appsettings.json" -and $_.Name -ne "appsettings.version" } |
           ForEach-Object { Move-Item $_.FullName $watchdogPayload -Force }
 
-        # Remove appsettings.json from payload so heat does NOT harvest it
         $serviceJson = Join-Path $servicePayload "appsettings.json"
         if (Test-Path $serviceJson) { Remove-Item $serviceJson -Force }
 
         $watchdogJson = Join-Path $watchdogPayload "appsettings.json"
         if (Test-Path $watchdogJson) { Remove-Item $watchdogJson -Force }
 
-        # ============================
-        # HEAT (64-bit components)
-        # ============================
-        heat dir $servicePayload -gg -sreg -scom -sfrag -srd -wx64 -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
-        heat dir $watchdogPayload -gg -sreg -scom -sfrag -srd -wx64 -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
+        heat dir $servicePayload -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
+        heat dir $watchdogPayload -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
 
         candle `
           -dServiceExePath="$serviceExe" `
@@ -229,9 +192,6 @@ jobs:
         light -b $servicePayload wix/generated/Product.Service.wixobj wix/generated/ServiceComponents.wixobj -o publish/ObservatorySafety.Service.msi
         light -b $watchdogPayload wix/generated/Product.Watchdog.wixobj wix/generated/WatchdogComponents.wixobj -o publish/ObservatorySafety.Watchdog.msi
 
-    # ============================
-    # Sign MSIs
-    # ============================
     - name: Sign MSIs
       shell: pwsh
       run: |
@@ -258,9 +218,6 @@ jobs:
       env:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
 
-    # ============================
-    # Upload artifacts
-    # ============================
     - name: Upload MSIs
       uses: actions/upload-artifact@v4
       with:

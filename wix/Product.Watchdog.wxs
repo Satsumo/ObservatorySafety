@@ -11,14 +11,13 @@
 
     <Package InstallerVersion="500"
              Compressed="yes"
-             InstallScope="perMachine"
-             Platform="x64" />
+             InstallScope="perMachine" />
 
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
 
-    <!-- Install into 64-bit Program Files -->
+    <!-- Install into standard Program Files (x86) -->
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="ProgramFiles64Folder">
+      <Directory Id="ProgramFilesFolder">
         <Directory Id="INSTALLDIR" Name="ObservatorySafety.Watchdog" />
       </Directory>
     </Directory>
@@ -32,8 +31,7 @@
 
     <!-- Windows Service installation -->
     <Component Id="WatchdogInstaller"
-               Directory="INSTALLDIR"
-               Win64="yes">
+               Directory="INSTALLDIR">
 
       <!-- Main EXE -->
       <File Id="WatchdogExe"
@@ -70,8 +68,7 @@
     <!-- Overwrite-safe config component -->
     <Component Id="WatchdogConfigComponent"
                Guid="9f92e734-ce38-409f-87c4-33f8c93f337b"
-               Directory="INSTALLDIR"
-               Win64="yes">
+               Directory="INSTALLDIR">
 
       <!-- Versioned KeyPath -->
       <File Id="WatchdogConfigVersion"
