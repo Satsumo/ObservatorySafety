@@ -77,15 +77,17 @@ jobs:
     # ============================
     - name: Build Service + Watchdog
       run: |
-        dotnet build src/ObservatorySafety.Service/ObservatorySafety.Service.csproj --configuration Release \
-            -p:Version=$env:MSI_VERSION \
-            -p:FileVersion=$env:MSI_VERSION \
-            -p:AssemblyVersion=$env:MSI_VERSION
+        dotnet build src/ObservatorySafety.Service/ObservatorySafety.Service.csproj 
+        --configuration Release 
+        /p:Version=$env:MSI_VERSION
+        /p:FileVersion=$env:MSI_VERSION
+        /p:AssemblyVersion=$env:MSI_VERSION
 
-        dotnet build src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj --configuration Release \
-            -p:Version=$env:MSI_VERSION \
-            -p:FileVersion=$env:MSI_VERSION \
-            -p:AssemblyVersion=$env:MSI_VERSION
+        dotnet build src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj 
+        --configuration Release
+        /p:Version=$env:MSI_VERSION
+        /p:FileVersion=$env:MSI_VERSION
+        /p:AssemblyVersion=$env:MSI_VERSION
             
     # ============================
     # Publish single-file EXEs
