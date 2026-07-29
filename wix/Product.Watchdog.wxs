@@ -35,16 +35,17 @@
           Id="ObservatorySafetyWatchdogInstall"
           Name="ObservatorySafety.Watchdog"
           DisplayName="Observatory Safety Watchdog"
-          Description="Restarts and monitors the ObservatorySafety Service."
+          Description="Monitors the ObservatorySafety Service."
           Start="auto"
           Type="ownProcess"
           ErrorControl="normal"
-          Vital="yes" />
+          Vital="yes"
+          Account="LocalSystem" />
 
       <ServiceControl
           Id="ObservatorySafetyWatchdogControl"
           Name="ObservatorySafety.Watchdog"
-          Start="install"
+          Start="none"
           Stop="both"
           Remove="uninstall"
           Wait="yes" />

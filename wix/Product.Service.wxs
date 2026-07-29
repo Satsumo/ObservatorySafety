@@ -39,12 +39,13 @@
           Start="auto"
           Type="ownProcess"
           ErrorControl="normal"
-          Vital="yes" />
+          Vital="yes"
+          Account="LocalSystem" />
 
       <ServiceControl
           Id="ObservatorySafetyServiceControl"
           Name="ObservatorySafety.Service"
-          Start="install"
+          Start="none"
           Stop="both"
           Remove="uninstall"
           Wait="yes" />

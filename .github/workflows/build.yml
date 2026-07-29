@@ -1,4 +1,4 @@
-name: Build, Sign, and Publish ObservatorySafety EXEs + MSIs
+name: Build, Sign, and Publish ObservatorySafety MSIs
 
 on:
   push:
@@ -94,43 +94,6 @@ jobs:
           /p:AssemblyVersion=$env:MSI_VERSION
 
     # ============================
-    # Publish single-file EXEs
-    # ============================
-    - name: Publish Service EXE
-      shell: pwsh
-      run: |
-        dotnet publish src/ObservatorySafety.Service/ObservatorySafety.Service.csproj `
-          --configuration Release `
-          --runtime win-x64 `
-          --self-contained true `
-          /p:Version=$env:MSI_VERSION `
-          /p:FileVersion=$env:MSI_VERSION `
-          /p:AssemblyVersion=$env:MSI_VERSION `
-          /p:PublishSingleFile=true `
-          /p:IncludeNativeLibrariesForSelfExtract=true `
-          /p:PublishTrimmed=false `
-          /p:UseWindowsService=false `
-          /p:UseAppHost=true `
-          --output ./publish/service
-
-    - name: Publish Watchdog EXE
-      shell: pwsh
-      run: |
-        dotnet publish src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj `
-          --configuration Release `
-          --runtime win-x64 `
-          --self-contained true `
-          /p:Version=$env:MSI_VERSION `
-          /p:FileVersion=$env:MSI_VERSION `
-          /p:AssemblyVersion=$env:MSI_VERSION `
-          /p:PublishSingleFile=true `
-          /p:IncludeNativeLibrariesForSelfExtract=true `
-          /p:PublishTrimmed=false `
-          /p:UseWindowsService=false `
-          /p:UseAppHost=true `
-          --output ./publish/watchdog
-
-    # ============================
     # Publish loose files for MSI
     # ============================
     - name: Publish Service (MSI loose files)
@@ -171,7 +134,7 @@ jobs:
         SIGNING_CERT: ${{ secrets.SIGNING_CERT }}
 
     # ============================
-    # Sign EXEs
+    # Sign EXEs (inside MSI folders)
     # ============================
     - name: Sign EXEs
       shell: pwsh
@@ -187,7 +150,7 @@ jobs:
           /tr http://timestamp.digicert.com `
           /td sha256 `
           /fd sha256 `
-          publish/service/ObservatorySafety.Service.exe
+          publish/service-msi/ObservatorySafety.Service.exe
 
         & $signtool.FullName sign `
           /f cert.pfx `
@@ -195,7 +158,7 @@ jobs:
           /tr http://timestamp.digicert.com `
           /td sha256 `
           /fd sha256 `
-          publish/watchdog/ObservatorySafety.Watchdog.exe
+          publish/watchdog-msi/ObservatorySafety.Watchdog.exe
       env:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
 
@@ -265,17 +228,13 @@ jobs:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
 
     # ============================
-    # Upload artifacts
+    # Upload artifacts (MSIs only)
     # ============================
-    - name: Upload signed EXEs + JSONs + MSIs
+    - name: Upload MSIs
       uses: actions/upload-artifact@v4
       with:
-        name: ObservatorySafety-Binaries
+        name: ObservatorySafety-MSIs
         path: |
-          publish/service/ObservatorySafety.Service.exe
-          publish/service/appsettings.json
-          publish/watchdog/ObservatorySafety.Watchdog.exe
-          publish/watchdog/appsettings.json
           publish/ObservatorySafety.Service.msi
           publish/ObservatorySafety.Watchdog.msi
 
@@ -287,7 +246,7 @@ jobs:
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
-        name: ObservatorySafety-Binaries
+        name: ObservatorySafety-MSIs
         path: ./release
 
     - name: Create GitHub Release
@@ -296,10 +255,6 @@ jobs:
         tag_name: v1.0.${{ github.run_number }}
         name: ObservatorySafety v1.0.${{ github.run_number }}
         files: |
-          ./release/service/ObservatorySafety.Service.exe
-          ./release/service/appsettings.json#appsettings.service.json
-          ./release/watchdog/ObservatorySafety.Watchdog.exe
-          ./release/watchdog/appsettings.json#appsettings.watchdog.json
           ./release/ObservatorySafety.Service.msi
           ./release/ObservatorySafety.Watchdog.msi
       env:
