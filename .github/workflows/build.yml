@@ -107,7 +107,7 @@ jobs:
           /p:FileVersion=$env:MSI_VERSION `
           /p:AssemblyVersion=$env:MSI_VERSION `
           /p:PublishSingleFile=false `
-          --output ./publish/service-msi
+          --output src/ObservatorySafety.Service/publish-msi
 
     - name: Publish Watchdog (MSI loose files)
       shell: pwsh
@@ -120,7 +120,7 @@ jobs:
           /p:FileVersion=$env:MSI_VERSION `
           /p:AssemblyVersion=$env:MSI_VERSION `
           /p:PublishSingleFile=false `
-          --output ./publish/watchdog-msi
+          --output src/ObservatorySafety.Watchdog/publish-msi
 
     # ============================
     # Decode Base64 PFX certificate
@@ -150,7 +150,7 @@ jobs:
           /tr http://timestamp.digicert.com `
           /td sha256 `
           /fd sha256 `
-          publish/service-msi/ObservatorySafety.Service.exe
+          src/ObservatorySafety.Service/publish-msi/ObservatorySafety.Service.exe
 
         & $signtool.FullName sign `
           /f cert.pfx `
@@ -158,7 +158,7 @@ jobs:
           /tr http://timestamp.digicert.com `
           /td sha256 `
           /fd sha256 `
-          publish/watchdog-msi/ObservatorySafety.Watchdog.exe
+          src/ObservatorySafety.Watchdog/publish-msi/ObservatorySafety.Watchdog.exe
       env:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
 
@@ -170,15 +170,14 @@ jobs:
       run: |
         New-Item -ItemType Directory -Path wix/generated -Force | Out-Null
 
-        $root = $PWD
-        $servicePath = Join-Path $root "publish/service-msi"
-        $watchdogPath = Join-Path $root "publish/watchdog-msi"
+        $servicePath = "src/ObservatorySafety.Service/publish-msi"
+        $watchdogPath = "src/ObservatorySafety.Watchdog/publish-msi"
 
-        $serviceExe = Join-Path $servicePath "ObservatorySafety.Service.exe"
-        $watchdogExe = Join-Path $watchdogPath "ObservatorySafety.Watchdog.exe"
+        $serviceExe = "$servicePath/ObservatorySafety.Service.exe"
+        $watchdogExe = "$watchdogPath/ObservatorySafety.Watchdog.exe"
 
-        $servicePayload = Join-Path $servicePath "payload"
-        $watchdogPayload = Join-Path $watchdogPath "payload"
+        $servicePayload = "$servicePath/payload"
+        $watchdogPayload = "$watchdogPath/payload"
 
         New-Item -ItemType Directory -Path $servicePayload -Force | Out-Null
         New-Item -ItemType Directory -Path $watchdogPayload -Force | Out-Null
@@ -194,13 +193,13 @@ jobs:
 
         candle `
           -dServiceExePath="$serviceExe" `
-          -dServiceConfigPath="$servicePath\appsettings.json" `
+          -dServiceConfigPath="$servicePath/appsettings.json" `
           wix/Product.Service.wxs wix/generated/ServiceComponents.wxs `
           -o wix/generated/
 
         candle `
           -dWatchdogExePath="$watchdogExe" `
-          -dWatchdogConfigPath="$watchdogPath\appsettings.json" `
+          -dWatchdogConfigPath="$watchdogPath/appsettings.json" `
           wix/Product.Watchdog.wxs wix/generated/WatchdogComponents.wxs `
           -o wix/generated/
 
