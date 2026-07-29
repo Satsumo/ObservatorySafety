@@ -9,7 +9,11 @@
       Manufacturer="Satsumo"
       UpgradeCode="A3F9C1E2-6B4D-4F8A-9C2E-1D7B3A9F4C21">
 
-    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+    <Package InstallerVersion="500"
+         Compressed="yes"
+         InstallScope="perMachine"
+         Platform="x64" />
+
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
 
     <!-- Install into 64-bit Program Files -->
