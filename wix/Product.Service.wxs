@@ -19,18 +19,26 @@
       </Directory>
     </Directory>
 
-    <!-- Heat.exe harvested components -->
+    <!-- Main Feature -->
     <Feature Id="MainFeature" Title="ObservatorySafety Service" Level="1">
-        <ComponentGroupRef Id="ServiceComponents" />
-        <ComponentRef Id="ServiceInstaller" />
+      <ComponentGroupRef Id="ServiceComponents" />
+      <ComponentRef Id="ServiceInstaller" />
     </Feature>
 
     <!-- Windows Service installation -->
     <Component Id="ServiceInstaller" Directory="INSTALLDIR">
+
+      <!-- Main EXE -->
       <File Id="ServiceExe"
             Source="$(var.ServiceExePath)"
             KeyPath="yes" />
 
+      <!-- Include baseline appsettings.json -->
+      <File Id="ServiceConfig"
+            Source="$(var.ServiceConfigPath)"
+            Name="appsettings.json" />
+
+      <!-- Install the Windows Service -->
       <ServiceInstall
           Id="ObservatorySafetyServiceInstall"
           Name="ObservatorySafety.Service"
@@ -42,6 +50,8 @@
           Vital="yes"
           Account="LocalSystem" />
 
+      <!-- Control service behaviour during MSI install -->
+      <!-- No Start attribute → MSI will NOT start the service -->
       <ServiceControl
           Id="ObservatorySafetyServiceControl"
           Name="ObservatorySafety.Service"
@@ -49,7 +59,7 @@
           Remove="uninstall"
           Wait="yes" />
 
-      <!-- CORRECT WAY TO SET ENVIRONMENT VARIABLE IN WIX v3 -->
+      <!-- Environment variable -->
       <RegistryValue
           Root="HKLM"
           Key="SYSTEM\CurrentControlSet\Services\ObservatorySafety.Service"
