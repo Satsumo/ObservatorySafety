@@ -182,10 +182,12 @@ jobs:
         New-Item -ItemType Directory -Path $servicePayload -Force | Out-Null
         New-Item -ItemType Directory -Path $watchdogPayload -Force | Out-Null
 
-        Get-ChildItem $servicePath -File | Where-Object { $_.Name -ne "ObservatorySafety.Service.exe" } |
+        Get-ChildItem $servicePath -File |
+          Where-Object { $_.Name -ne "ObservatorySafety.Service.exe" -and $_.Name -ne "appsettings.json" } |
           ForEach-Object { Move-Item $_.FullName $servicePayload -Force }
 
-        Get-ChildItem $watchdogPath -File | Where-Object { $_.Name -ne "ObservatorySafety.Watchdog.exe" } |
+        Get-ChildItem $watchdogPath -File |
+          Where-Object { $_.Name -ne "ObservatorySafety.Watchdog.exe" -and $_.Name -ne "appsettings.json" } |
           ForEach-Object { Move-Item $_.FullName $watchdogPayload -Force }
 
         heat dir $servicePayload -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
