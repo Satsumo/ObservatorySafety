@@ -45,7 +45,6 @@
       <ServiceControl
           Id="ObservatorySafetyWatchdogControl"
           Name="ObservatorySafety.Watchdog"
-          Start="none"
           Stop="both"
           Remove="uninstall"
           Wait="yes" />
