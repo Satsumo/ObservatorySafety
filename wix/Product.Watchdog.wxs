@@ -23,6 +23,7 @@
     <Feature Id="MainFeature" Title="ObservatorySafety Watchdog" Level="1">
       <ComponentGroupRef Id="WatchdogComponents" />
       <ComponentRef Id="WatchdogInstaller" />
+      <ComponentRef Id="WatchdogConfigComponent" />
     </Feature>
 
     <!-- Windows Service installation -->
@@ -32,15 +33,6 @@
       <File Id="WatchdogExe"
             Source="$(var.WatchdogExePath)"
             KeyPath="yes" />
-
-      <!-- Include baseline appsettings.json -->
-      <File Id="WatchdogConfig"
-            Source="$(var.WatchdogConfigPath)"
-            Name="appsettings.json"
-            KeyPath="no"
-            NeverOverwrite="no"
-            Vital="yes" />
-
 
       <!-- Install the Windows Service -->
       <ServiceInstall
@@ -72,6 +64,18 @@
           Value="OBSERVATORY_ENVIRONMENT=Production"
           Action="write" />
 
+    </Component>
+
+    <!-- Force appsettings.json to be overwritten on upgrade -->
+    <!-- IMPORTANT: Generate a NEW GUID for every release -->
+    <Component Id="WatchdogConfigComponent"
+               Guid="9f92e734-ce38-409f-87c4-33f8c93f337b"
+               Directory="INSTALLDIR">
+
+      <File Id="WatchdogConfig"
+            Source="$(var.WatchdogConfigPath)"
+            Name="appsettings.json"
+            KeyPath="yes" />
     </Component>
 
   </Product>

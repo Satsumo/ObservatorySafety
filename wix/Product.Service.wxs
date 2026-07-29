@@ -23,6 +23,7 @@
     <Feature Id="MainFeature" Title="ObservatorySafety Service" Level="1">
       <ComponentGroupRef Id="ServiceComponents" />
       <ComponentRef Id="ServiceInstaller" />
+      <ComponentRef Id="ServiceConfigComponent" />
     </Feature>
 
     <!-- Windows Service installation -->
@@ -32,14 +33,6 @@
       <File Id="ServiceExe"
             Source="$(var.ServiceExePath)"
             KeyPath="yes" />
-
-      <!-- Include baseline appsettings.json -->
-      <File Id="ServiceConfig"
-            Source="$(var.ServiceConfigPath)"
-            Name="appsettings.json"
-            KeyPath="no"
-            NeverOverwrite="no"
-            Vital="yes" />
 
       <!-- Install the Windows Service -->
       <ServiceInstall
@@ -71,6 +64,18 @@
           Value="OBSERVATORY_ENVIRONMENT=Production"
           Action="write" />
 
+    </Component>
+
+    <!-- Force appsettings.json to be overwritten on upgrade -->
+    <!-- IMPORTANT: Generate a NEW GUID for every release -->
+    <Component Id="ServiceConfigComponent"
+               Guid="643739ef-3d89-4499-bc46-1c559da260d5"
+               Directory="INSTALLDIR">
+
+      <File Id="ServiceConfig"
+            Source="$(var.ServiceConfigPath)"
+            Name="appsettings.json"
+            KeyPath="yes" />
     </Component>
 
   </Product>
