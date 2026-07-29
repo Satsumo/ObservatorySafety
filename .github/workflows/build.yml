@@ -75,7 +75,7 @@ jobs:
     # ============================
     # Build Service project
     # ============================
-    - name: Build Service + Watchdog
+    - name: Build Service
       run: >
         dotnet build src/ObservatorySafety.Service/ObservatorySafety.Service.csproj 
         --configuration Release 
@@ -86,7 +86,7 @@ jobs:
     # ============================
     # Build Watchdog project
     # ============================
-    - name: Build Service + Watchdog
+    - name: Build Watchdog
       run: >
         dotnet build src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj 
         --configuration Release
@@ -104,6 +104,9 @@ jobs:
         --configuration Release
         --runtime win-x64
         --self-contained true
+        /p:Version=$env:MSI_VERSION
+        /p:FileVersion=$env:MSI_VERSION
+        /p:AssemblyVersion=$env:MSI_VERSION
         /p:PublishSingleFile=true
         /p:IncludeNativeLibrariesForSelfExtract=true
         /p:PublishTrimmed=false
@@ -118,6 +121,9 @@ jobs:
         --configuration Release
         --runtime win-x64
         --self-contained true
+        /p:Version=$env:MSI_VERSION
+        /p:FileVersion=$env:MSI_VERSION
+        /p:AssemblyVersion=$env:MSI_VERSION
         /p:PublishSingleFile=true
         /p:IncludeNativeLibrariesForSelfExtract=true
         /p:PublishTrimmed=false
@@ -135,6 +141,9 @@ jobs:
         --configuration Release
         --runtime win-x64
         --self-contained true
+        /p:Version=$env:MSI_VERSION
+        /p:FileVersion=$env:MSI_VERSION
+        /p:AssemblyVersion=$env:MSI_VERSION
         /p:PublishSingleFile=false
         --output ./publish/service-msi
 
@@ -145,6 +154,9 @@ jobs:
         --configuration Release
         --runtime win-x64
         --self-contained true
+        /p:Version=$env:MSI_VERSION
+        /p:FileVersion=$env:MSI_VERSION
+        /p:AssemblyVersion=$env:MSI_VERSION
         /p:PublishSingleFile=false
         --output ./publish/watchdog-msi
 
