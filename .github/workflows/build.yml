@@ -190,6 +190,17 @@ jobs:
           Where-Object { $_.Name -ne "ObservatorySafety.Watchdog.exe" -and $_.Name -ne "appsettings.json" } |
           ForEach-Object { Move-Item $_.FullName $watchdogPayload -Force }
 
+        # Explicitly remove appsettings.json from payload so heat does NOT harvest it
+        $serviceAppSettings = Join-Path $servicePayload "appsettings.json"
+        if (Test-Path $serviceAppSettings) {
+          Remove-Item $serviceAppSettings -Force
+        }
+
+        $watchdogAppSettings = Join-Path $watchdogPayload "appsettings.json"
+        if (Test-Path $watchdogAppSettings) {
+          Remove-Item $watchdogAppSettings -Force
+        }
+
         heat dir $servicePayload -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg ServiceComponents -out wix/generated/ServiceComponents.wxs
         heat dir $watchdogPayload -gg -sreg -scom -sfrag -srd -dr INSTALLDIR -cg WatchdogComponents -out wix/generated/WatchdogComponents.wxs
 
