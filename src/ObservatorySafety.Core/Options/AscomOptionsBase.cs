@@ -1,11 +1,8 @@
 ﻿namespace ObservatorySafety.Core.Options
 {
-  public class AscomOptionsBase
+  public abstract class AscomOptionsBase : MonitorOptionsBase
   {
     public string AscomID { get; set; } = "";
 
-    public int PollingPeriodSeconds { get; set; } = 30;
-
-    public bool Enabled { get; set; } = true;
   }
 }

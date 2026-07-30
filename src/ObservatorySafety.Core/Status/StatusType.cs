@@ -3,6 +3,7 @@
   public enum StatusType
   {
     ApplicationRunning,
+    CloudWatcherDataStale,
     MountParked,
     PowerOn,
     RoofClosed,

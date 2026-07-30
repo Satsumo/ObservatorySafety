@@ -1,28 +1,30 @@
-﻿using System.Diagnostics;
-using System.Management;
-
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using ObservatorySafety.Core;
 using ObservatorySafety.Core.Status;
+using ObservatorySafety.Infrastructure.Options;
+
+using System.Diagnostics;
+using System.Management;
 
 namespace ObservatorySafety.Infrastructure.Monitor
 {
   public sealed class WmiPowerStatusMonitor : StatusMonitorBase
   {
     private readonly ILogger<WmiPowerStatusMonitor> _logger;
-    private readonly EquipmentOptions _options;
+    private readonly PowerOptions _options;
 
     private readonly Stopwatch _powerOutageTimer = new();
 
-    public WmiPowerStatusMonitor(ILogger<WmiPowerStatusMonitor> logger, IOptions<EquipmentOptions> options) : base(options.Value.PowerOutagePollingTimeSeconds)
+    public WmiPowerStatusMonitor(ILogger<WmiPowerStatusMonitor> logger, IOptions<PowerOptions> options) : base(options.Value.PollingPeriodSeconds)
     {
       _logger = logger;
       _options = options.Value;
     }
 
     public override MonitorType MonitorType => MonitorType.PowerStatus;
+
+    public override StatusType[] ProvidedStatuses => _options.MonitoredStatuses;
 
     public override ILogger Logger => _logger;
     

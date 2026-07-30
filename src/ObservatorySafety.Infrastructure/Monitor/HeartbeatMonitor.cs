@@ -15,6 +15,8 @@ namespace ObservatorySafety.Infrastructure.Monitor
 
     public override MonitorType MonitorType => MonitorType.Heartbeat;
 
+    public override StatusType[] ProvidedStatuses => [ StatusType.None ];
+
     public override ILogger Logger => _logger;
     
     protected override void Poll()

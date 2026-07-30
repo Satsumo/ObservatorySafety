@@ -2,6 +2,8 @@
 
 using ObservatorySafety.Core.Abstractions;
 
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
 namespace ObservatorySafety.Core.Status
 {
   public abstract class StatusMonitorBase : PollingServiceBase, IStatusMonitor
@@ -24,7 +26,18 @@ namespace ObservatorySafety.Core.Status
       {
         lock (_sync)
         {
-          if (_statuses.OrderBy(k => k.Key).SequenceEqual(value.OrderBy(k => k.Key))) 
+          // Each monitor is configured to only provide certain statuses (via config).
+          // This allows us to control which statuses come from which providers via config even
+          // though a status can come from several monitors (for example, mount parked can come from
+          // NINA, Mount Sensor and even a Dragonfly).  This allows us to use the config to drive
+          // which monitor we trust to be the best source.
+          // So, we remove any status values that are not in this monitor's configuration.
+          var filtered = value
+            .Where(kvp => this.ProvidedStatuses.Contains(kvp.Key))
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+          // If the values haven't changed then do nothing
+          if (_statuses.OrderBy(k => k.Key).SequenceEqual(filtered.OrderBy(k => k.Key))) 
             return;
 
           _statuses = value;
@@ -38,6 +51,9 @@ namespace ObservatorySafety.Core.Status
     }
 
     public abstract MonitorType MonitorType { get; }
+
+    public abstract StatusType[] ProvidedStatuses { get; }
+
 
     public abstract ILogger Logger { get; }
 

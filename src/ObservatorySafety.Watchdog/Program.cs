@@ -131,7 +131,7 @@ namespace ObservatorySafety.Watchdog
     static void ConsoleLog(string message)
     {
       if (Environment.GetCommandLineArgs().Contains("--console"))
-        ConsoleLog(message);
+        Console.WriteLine(message);
     }
 
   }

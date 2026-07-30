@@ -6,6 +6,8 @@ namespace ObservatorySafety.Core.Abstractions
   {
     MonitorType MonitorType { get; }
 
+    StatusType[] ProvidedStatuses { get; }
+
     IDictionary<StatusType, bool> Statuses { get; }
 
     event EventHandler<StatusChangedEventArgs>? StatusChanged;

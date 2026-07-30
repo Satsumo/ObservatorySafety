@@ -104,11 +104,19 @@ static class Program
             //
             // Options
             //
-            services.Configure<NinaOptions>(ctx.Configuration.GetSection("Nina"));
+            services.Configure<EquipmentOptions>(ctx.Configuration.GetSection("Equipment"));
+
+            // Monitor options
+            services.Configure<CloudWatcherOptions>(ctx.Configuration.GetSection("CloudWatcher"));
             services.Configure<DarkDragonOptions>(ctx.Configuration.GetSection("DarkDragon"));
             services.Configure<DragonflyOptions>(ctx.Configuration.GetSection("Dragonfly"));
-            services.Configure<EquipmentOptions>(ctx.Configuration.GetSection("Equipment"));
+            services.Configure<NinaOptions>(ctx.Configuration.GetSection("Nina"));
+            services.Configure<PowerOptions>(ctx.Configuration.GetSection("Power"));
+
+            // Handler options
             services.Configure<USBRelaySwitchHandlerOptions>(ctx.Configuration.GetSection("USBRelaySwitch"));
+
+            // Alert services' options
             services.Configure<EmailAlertOptions>(ctx.Configuration.GetSection("Email"));
             services.Configure<WhatsAppAlertOptions>(ctx.Configuration.GetSection("WhatsApp"));
             services.Configure<PushOverAlertOptions>(ctx.Configuration.GetSection("PushOver"));
@@ -158,23 +166,17 @@ static class Program
             //
             // Monitors
             //
-            services.AddSingleton<IStatusMonitor>(sp =>
+            if (simulatePowerLoss)
             {
-              if (simulatePowerLoss)
-              {
-                ConsoleLog("Using SimulatedPowerLossPowerStatusMonitor.");
-                var logger = sp.GetRequiredService<ILogger<SimulatedPowerLossPowerStatusMonitor>>();
-                return new SimulatedPowerLossPowerStatusMonitor(logger);
-              }
-              else
-              {
-                var logger = sp.GetRequiredService<ILogger<WmiPowerStatusMonitor>>();
-                var options = sp.GetRequiredService<IOptions<EquipmentOptions>>();
-                return new WmiPowerStatusMonitor(logger, options);
-              }
-            });
-
+              ConsoleLog("Using SimulatedPowerLossPowerStatusMonitor.");
+              services.AddSingleton<IStatusMonitor, SimulatedPowerLossPowerStatusMonitor>();
+            }
+            else
+            {
+              services.AddSingleton<IStatusMonitor, WmiPowerStatusMonitor>();
+            }
             services.AddSingleton<IStatusMonitor, NinaMonitor>();
+            services.AddSingleton<IStatusMonitor, CloudWatcherMonitor>();
             services.AddSingleton<IStatusMonitor, HeartbeatMonitor>();
             services.AddSingleton<IStatusMonitor, DragomflyMonitor>(sp =>
             {
@@ -259,7 +261,7 @@ static class Program
     static void ConsoleLog(string message)
     {
       if (Environment.GetCommandLineArgs().Contains("--console"))
-        ConsoleLog(message);
+        Console.WriteLine(message);
     }
   }
 }

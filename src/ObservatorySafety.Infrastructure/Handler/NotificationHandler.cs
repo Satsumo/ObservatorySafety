@@ -32,6 +32,7 @@ namespace ObservatorySafety.Infrastructure.Handler
       // set up current state - assuming everything is good
       var currentState = new Dictionary<StatusType, bool>()
       {
+        { StatusType.CloudWatcherDataStale, false },
         { StatusType.RoofOpen, false},
         { StatusType.RoofClosed, true},
         { StatusType.PowerOn, true},
@@ -44,6 +45,10 @@ namespace ObservatorySafety.Infrastructure.Handler
       {
         _logger.LogInformation("Monitor: {MonitorName}, State: {MonitorState}", monitorState.Key, monitorState.Value.Statuses);
         switch (monitorState.Key) {
+          case MonitorType.CloudWatcher:
+            currentState[StatusType.CloudWatcherDataStale] = monitorState.Value.Statuses[StatusType.CloudWatcherDataStale];
+            break;
+
           case MonitorType.PowerStatus:
             currentState[StatusType.PowerOn] = monitorState.Value.Statuses[StatusType.PowerOn];
             break;
@@ -86,6 +91,10 @@ namespace ObservatorySafety.Infrastructure.Handler
 
       if (!currentState[StatusType.ApplicationRunning]) {
         thereIsAProblem = true;
+      }
+
+      if (currentState[StatusType.CloudWatcherDataStale]) {
+        thereIsAProblem |= true;
       }
 
       if (thereIsAProblem)

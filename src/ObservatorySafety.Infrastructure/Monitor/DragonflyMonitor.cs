@@ -24,15 +24,17 @@ namespace ObservatorySafety.Infrastructure.Monitor
 
     public override MonitorType MonitorType => MonitorType.Dragonfly;
 
+    public override StatusType[] ProvidedStatuses => _options.MonitoredStatuses;
+
     public override ILogger Logger => _logger;
 
     protected override void Poll()
     {
       var statuses = new Dictionary<StatusType, bool>();
 
-      for (short statusNumber = 0; statusNumber < _options.StatusTypes.Length; statusNumber++)
+      for (short statusNumber = 0; statusNumber < _options.SensorStatusTypes.Length; statusNumber++)
       {
-        var statusType = _options.StatusTypes[statusNumber];
+        var statusType = _options.SensorStatusTypes[statusNumber];
         var switchNumber = statusNumber + 1; //switches count from one, not zero
 
         try

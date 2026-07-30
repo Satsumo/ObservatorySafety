@@ -22,6 +22,8 @@ namespace ObservatorSafety.NINA
 
     public override MonitorType MonitorType => MonitorType.NINA;
 
+    public override StatusType[] ProvidedStatuses => _options.MonitoredStatuses;
+
     public override ILogger Logger => _logger;
 
     protected override void Poll()
