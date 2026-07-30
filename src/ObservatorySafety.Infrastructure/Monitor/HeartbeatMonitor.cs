@@ -23,7 +23,7 @@ namespace ObservatorySafety.Infrastructure.Monitor
       // will alert if there's no activity.
       // But activity is not guaranteed - if everything just ticks along without issues.  So, we log here
       // because it will then act as a heartbeat in the log files
-      _logger.LogInformation("Checking power status");
+      _logger.LogInformation("Monitor poller is running");
     }
   }
 }
