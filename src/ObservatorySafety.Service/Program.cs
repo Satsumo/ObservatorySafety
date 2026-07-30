@@ -175,6 +175,7 @@ static class Program
             });
 
             services.AddSingleton<IStatusMonitor, NinaMonitor>();
+            services.AddSingleton<IStatusMonitor, HeartbeatMonitor>();
             services.AddSingleton<IStatusMonitor, DragomflyMonitor>(sp =>
             {
               var options = sp.GetRequiredService<IOptions<DragonflyOptions>>();

@@ -5,6 +5,7 @@ namespace ObservatorySafety.Core.Status
   {
     DarkDragonMountSensor,
     Dragonfly,
+    Heartbeat,
     NINA,
     PowerStatus
   }
