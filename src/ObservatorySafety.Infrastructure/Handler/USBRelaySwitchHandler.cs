@@ -62,7 +62,13 @@ namespace ObservatorySafety.Infrastructure.Handler
       if (!_options.Enabled)
         return;
 
-      var relayValues = new Dictionary<int, bool?>();
+      var relayValues = new Dictionary<int, bool>();
+
+      // Set relay values to false before we check what we got in the payload
+      for (int channel = 0; channel < _options.Relays.Length; channel++)
+      {
+        relayValues[channel + 1] = false;
+      }
 
       // Several monitors are involved in creating the status packed. The channel data may be spread across them, and sometimes
       // the data can come from multiple status providers.
@@ -76,7 +82,10 @@ namespace ObservatorySafety.Infrastructure.Handler
           for (int channel = 0; channel < _options.Relays.Length; channel++)
           {
             var relayNumber = channel + 1; // relays start from ONE, not ZERO
-            if (!relayValues.ContainsKey(relayNumber))
+
+            // Only set if value is still false - we stop changing it once we have it set to true from one of the
+            // other monitors (basically the StatusProviders list is in priority order
+            if (!relayValues[relayNumber])
             {
               var channelName = _options.Relays[channel];
               if (monitor.Statuses.ContainsKey(channelName))
@@ -93,10 +102,7 @@ namespace ObservatorySafety.Infrastructure.Handler
 
       foreach (var relay in relayValues)
       {
-        if (relay.Value != null)
-        {
-          this.SetRelayState(relay.Key, relay.Value.Value);
-        }
+        this.SetRelayState(relay.Key, relay.Value);
       }
     }
 
