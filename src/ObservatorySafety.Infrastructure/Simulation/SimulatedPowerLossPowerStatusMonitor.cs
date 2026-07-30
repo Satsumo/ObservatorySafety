@@ -12,6 +12,8 @@ namespace ObservatorySafety.Infrastructure.Simulation
 
     public override MonitorType MonitorType => MonitorType.PowerStatus;
 
+    public override ILogger Logger => _logger;
+
     public SimulatedPowerLossPowerStatusMonitor(ILogger<SimulatedPowerLossPowerStatusMonitor> logger)
     {
       _logger = logger;

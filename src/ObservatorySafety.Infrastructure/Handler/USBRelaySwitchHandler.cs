@@ -59,6 +59,9 @@ namespace ObservatorySafety.Infrastructure.Handler
 
     public override async void HandleMonitorStates(StatusPacket packet)
     {
+      if (!_options.Enabled)
+        return;
+
       var relayValues = new Dictionary<int, bool?>();
 
       // Several monitors are involved in creating the status packed. The channel data may be spread across them, and sometimes
@@ -84,6 +87,9 @@ namespace ObservatorySafety.Infrastructure.Handler
           }
         }
       }
+
+      var relaysAsString = string.Join("\r\n", relayValues.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+      _logger.LogInformation("Handler {name}: Setting relay values to:\r\n{statuses}", this.Name, relaysAsString);
 
       foreach (var relay in relayValues)
       {

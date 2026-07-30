@@ -22,6 +22,8 @@ namespace ObservatorSafety.NINA
 
     public override MonitorType MonitorType => MonitorType.NINA;
 
+    public override ILogger Logger => _logger;
+
     protected override void Poll()
     {
       _ninaClient.GetEquipmentInfoAsync().ContinueWith(task =>
@@ -37,10 +39,6 @@ namespace ObservatorSafety.NINA
         }
         else
         {
-
-          _logger.LogInformation("NINA status data received: Weather safe: {WeatherSafe}, Dome closed: {DomeClosed}, Mount parked: {MountParked}, Sequence running: {SequenceRunning}",
-            equipmentInfo.SafetyMonitor?.IsSafe, equipmentInfo.Dome?.ShutterStatus, equipmentInfo.Mount?.AtPark, equipmentInfo.Sequence?.IsRunning);
-
           IDictionary<StatusType, bool> statuses = new Dictionary<StatusType, bool>
           {
             { StatusType.ApplicationRunning, true }

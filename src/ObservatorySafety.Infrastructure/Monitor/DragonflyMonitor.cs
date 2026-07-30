@@ -24,6 +24,8 @@ namespace ObservatorySafety.Infrastructure.Monitor
 
     public override MonitorType MonitorType => MonitorType.Dragonfly;
 
+    public override ILogger Logger => _logger;
+
     protected override void Poll()
     {
       var statuses = new Dictionary<StatusType, bool>();

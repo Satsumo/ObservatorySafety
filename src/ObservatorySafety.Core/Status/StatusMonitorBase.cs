@@ -1,4 +1,6 @@
-﻿using ObservatorySafety.Core.Abstractions;
+﻿using Microsoft.Extensions.Logging;
+
+using ObservatorySafety.Core.Abstractions;
 
 namespace ObservatorySafety.Core.Status
 {
@@ -26,12 +28,18 @@ namespace ObservatorySafety.Core.Status
             return;
 
           _statuses = value;
+
+          var statusesAsString = string.Join("\r\n", _statuses.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+          this.Logger.LogInformation("Monitor {name}: Status changed to:\r\n{statuses}", this.MonitorType, statusesAsString);
+
           OnStatusChanged();
         }
       }
     }
 
-    public abstract MonitorType MonitorType { get; }    
+    public abstract MonitorType MonitorType { get; }
+
+    public abstract ILogger Logger { get; }
 
     protected void RaiseStatusChanged()
     {

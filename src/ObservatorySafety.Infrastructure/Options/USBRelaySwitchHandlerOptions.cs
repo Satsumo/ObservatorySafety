@@ -5,6 +5,8 @@ namespace ObservatorySafety.Infrastructure.Configuration
 {
   public class USBRelaySwitchHandlerOptions
   {
+    public bool Enabled { get; set; }
+
     public string VendorID { get; set; } = "";
 
     public string ProductID { get; set; } = "";

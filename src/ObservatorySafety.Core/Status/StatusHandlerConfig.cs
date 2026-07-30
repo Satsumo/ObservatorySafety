@@ -9,6 +9,7 @@
   public sealed class StatusHandlerConfig
   {
     public StatusNotificationType NotificationType { get; init; }
+
     public TimeSpan? PollingInterval { get; init; } // meaningful only for Poll
   }
 

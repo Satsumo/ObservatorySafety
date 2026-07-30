@@ -24,6 +24,8 @@ namespace ObservatorySafety.Infrastructure.Monitor
 
     public override MonitorType MonitorType => MonitorType.PowerStatus;
 
+    public override ILogger Logger => _logger;
+    
     protected override void Poll()
     {
       try

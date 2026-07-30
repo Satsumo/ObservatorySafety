@@ -3,9 +3,11 @@
   public class HttpClientOptionsBase
   {
     public string BaseUrl { get; set; } = "";
+
     public string? ApiKey { get; set; }
+
     public int PollingPeriodSeconds { get; set; }
 
+    public bool Enabled { get; }
   }
-
 }
