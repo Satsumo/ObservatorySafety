@@ -115,6 +115,8 @@ static class Program
 
             // Handler options
             services.Configure<USBRelaySwitchHandlerOptions>(ctx.Configuration.GetSection("USBRelaySwitch"));
+            services.Configure<ShutdownOptions>(ctx.Configuration.GetSection("Shutdown"));
+
 
             // Alert services' options
             services.Configure<EmailAlertOptions>(ctx.Configuration.GetSection("Email"));
@@ -202,6 +204,7 @@ static class Program
             //
             services.AddSingleton<IStatusHandler, USBRelaySwitchHandler>();
             services.AddSingleton<IStatusHandler, NotificationHandler>();
+            services.AddSingleton<IStatusHandler, ShutdownHandler>();
 
             //
             // StatusRouter

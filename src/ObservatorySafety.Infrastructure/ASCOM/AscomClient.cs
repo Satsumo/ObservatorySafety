@@ -40,6 +40,13 @@ namespace ObservatorySafety.Infrastructure.ASCOM
       _switch.SetSwitch(switchID, value);
     }
 
+    public string GetSwitchName(short switchId)
+    {
+      return _switch.GetSwitchName(switchId);
+    }
+
+    public short MaxSwitch => _switch.MaxSwitch;
+
     private Switch GetSwitch()
     {
       if (_switch == null)

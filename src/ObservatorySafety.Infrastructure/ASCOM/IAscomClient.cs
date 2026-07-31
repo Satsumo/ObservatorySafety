@@ -7,5 +7,9 @@
     bool GetSwitchValue(short switchID);
 
     void SetSwitchValue(short switchID, bool value);
+
+    string GetSwitchName(short switchID);
+
+    short MaxSwitch { get; }
   }
 }

@@ -2,7 +2,7 @@
 
 namespace ObservatorySafety.NINA
 {
-  public class NinaOptions : HttpClientOptionsBase
+  public class NinaOptions : HttpClientMonitorOptionsBase
   {
   }
 }

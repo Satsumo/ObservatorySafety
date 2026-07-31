@@ -1,6 +1,6 @@
 ﻿namespace ObservatorySafety.Core.Options
 {
-  public class HttpClientOptionsBase : MonitorOptionsBase
+  public class HttpClientMonitorOptionsBase : MonitorOptionsBase
   {
     public string BaseUrl { get; set; } = "";
 

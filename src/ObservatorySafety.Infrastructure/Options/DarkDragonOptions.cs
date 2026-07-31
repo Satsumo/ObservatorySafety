@@ -2,7 +2,7 @@
 
 namespace ObservatorySafety.Infrastructure.Options
 {
-  public class DarkDragonOptions: HttpClientOptionsBase
+  public class DarkDragonOptions: HttpClientMonitorOptionsBase
   {
   }
 }
