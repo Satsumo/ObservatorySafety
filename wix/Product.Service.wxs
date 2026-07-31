@@ -27,6 +27,8 @@
       <ComponentGroupRef Id="ServiceComponents" />
       <ComponentRef Id="ServiceInstaller" />
       <ComponentRef Id="ServiceConfigComponent" />
+      <ComponentRef Id="UtilityExeComponent" />
+
     </Feature>
 
     <!-- Windows Service installation -->
@@ -87,6 +89,26 @@
             Source="$(var.ServiceConfigPath)"
             Name="appsettings.json"
             KeyPath="no" />
+    </Component>
+
+    <Component Id="UtilityExeComponent" Directory="INSTALLDIR">
+      <File Id="UtilityExe"
+            Source="$(var.UtilityExePath)"
+            KeyPath="yes" />
+    </Component>
+
+    <Component Id="UtilityShortcutComponent" Directory="ProgramMenuFolder">
+      <Shortcut Id="UtilityShortcut"
+                Name="ObservatorySafety Utility"
+                Description="ASCOM and ObservatorySafety diagnostic utility"
+                Target="[INSTALLDIR]ObservatorySafety.Utility.exe"
+                WorkingDirectory="INSTALLDIR" />
+      <RegistryValue Root="HKCU"
+                     Key="Software\Satsumo\ObservatorySafety"
+                     Name="UtilityShortcutInstalled"
+                     Type="integer"
+                     Value="1"
+                     KeyPath="yes" />
     </Component>
 
   </Product>
