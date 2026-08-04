@@ -119,6 +119,7 @@ static class Program
 
 
             // Alert services' options
+            services.Configure<AlertOptions>(ctx.Configuration.GetSection("Alerts"));
             services.Configure<EmailAlertOptions>(ctx.Configuration.GetSection("Email"));
             services.Configure<WhatsAppAlertOptions>(ctx.Configuration.GetSection("WhatsApp"));
             services.Configure<PushOverAlertOptions>(ctx.Configuration.GetSection("PushOver"));
@@ -156,7 +157,8 @@ static class Program
             services.AddSingleton<IAlertService>(sp =>
             {
               var logger = sp.GetRequiredService<ILogger<CompositeAlertService>>();
-              var composite = new CompositeAlertService(logger);
+              var options = sp.GetRequiredService<IOptions<AlertOptions>>();
+              var composite = new CompositeAlertService(logger, options);
 
               composite.AddAlertService("Pushover", sp.GetRequiredService<PushoverAlertService>());
               composite.AddAlertService("Email", sp.GetRequiredService<EmailAlertService>());

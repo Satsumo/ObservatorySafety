@@ -35,10 +35,6 @@ namespace ObservatorySafety.Watchdog.Services
     private int _serviceErrorBackoffSeconds = 0;
     private int _logErrorBackoffSeconds = 0;
 
-    private readonly Dictionary<string, DateTime> _lastAlertTimes = new();
-    private readonly TimeSpan _alertSuppressionWindow;
-
-
     public WatchdogService(
         ILogger<WatchdogService> logger,
         IConfiguration configuration,
@@ -61,9 +57,6 @@ namespace ObservatorySafety.Watchdog.Services
       _logCheckIntervalSeconds = section.GetValue<int>("LogCheckIntervalSeconds");
 
       _alertStrings = section.GetSection("AlertStrings").Get<string[]>() ?? Array.Empty<string>();
-
-      var alertSuppressionDelay = section.GetValue<int>("AlertSuppressionDelayMinutes");
-      _alertSuppressionWindow = TimeSpan.FromMinutes(alertSuppressionDelay);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -270,8 +263,8 @@ namespace ObservatorySafety.Watchdog.Services
               "SafetyService '{ServiceName}' is not running as Windows Service or console process.",
               _serviceName);
 
-          await SendAlertWithSuppression(
-              "Observatory SafetyService Not Running",
+          await _alertService.SendAlertAsync(
+                "Observatory SafetyService Not Running",
               $"SafetyService '{_serviceName}' is not running as Windows Service or console process.",
               cancellationToken);
         }
@@ -320,8 +313,8 @@ namespace ObservatorySafety.Watchdog.Services
           {
             _logger.LogWarning("Alert pattern '{Pattern}' detected in log line: {Line}", pattern, line);
 
-            await SendAlertWithSuppression(
-                "Observatory Log Alert",
+            await _alertService.SendAlertAsync(
+                    "Observatory Log Alert",
                 $"Pattern '{pattern}' detected in log: {line}",
                 cancellationToken);
           }
@@ -334,28 +327,13 @@ namespace ObservatorySafety.Watchdog.Services
       {
         _logger.LogWarning("Log inactivity detected. No log updates for {Seconds} seconds.", inactivitySeconds);
 
-        await SendAlertWithSuppression(
+        await _alertService.SendAlertAsync(
             "Observatory Log Inactivity",
             $"No log updates for {inactivitySeconds:F0} seconds. Service may be hung.",
             cancellationToken);
 
         _lastLogActivity = DateTime.UtcNow;
       }
-    }
-
-    private async Task SendAlertWithSuppression(string title, string message, CancellationToken cancellationToken)
-    {
-      var now = DateTime.UtcNow;
-      if (_lastAlertTimes.TryGetValue(message, out var lastAlertTime))
-      {
-        if ((now - lastAlertTime) < _alertSuppressionWindow)
-        {
-          _logger.LogInformation("Alert '{Title}' suppressed due to suppression window.", title);
-          return;
-        }
-      }
-      _lastAlertTimes[message] = now;
-      await _alertService.SendAlertAsync(title, message, cancellationToken);
     }
   }
 }

@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+
 using ObservatorySafety.Infrastructure.Alerts;
 using ObservatorySafety.Infrastructure.Options;
 using ObservatorySafety.Watchdog.Infrastructure;
@@ -78,6 +80,7 @@ namespace ObservatorySafety.Watchdog
                           {
                             var configuration = context.Configuration;
 
+                            services.Configure<AlertOptions>(context.Configuration.GetSection("Alerts"));
                             services.Configure<EmailAlertOptions>(context.Configuration.GetSection("Email"));
                             services.Configure<WhatsAppAlertOptions>(context.Configuration.GetSection("WhatsApp"));
                             services.Configure<PushOverAlertOptions>(context.Configuration.GetSection("PushOver"));
@@ -91,7 +94,8 @@ namespace ObservatorySafety.Watchdog
                             services.AddSingleton<IAlertService>(sp =>
                             {
                               var logger = sp.GetRequiredService<ILogger<CompositeAlertService>>();
-                              var composite = new CompositeAlertService(logger);
+                              var options = sp.GetRequiredService<IOptions<AlertOptions>>();
+                              var composite = new CompositeAlertService(logger, options);
 
                               composite.AddAlertService("Pushover", sp.GetRequiredService<PushoverAlertService>());
                               composite.AddAlertService("Email", sp.GetRequiredService<EmailAlertService>());
