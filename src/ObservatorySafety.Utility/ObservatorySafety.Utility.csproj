@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\ObservatorySafety.Infrastructure\ObservatorySafety.Infrastructure.csproj" />
+    <ProjectReference Include="..\ObservatorySafety.Infrastructure\ObservatorySafety.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
