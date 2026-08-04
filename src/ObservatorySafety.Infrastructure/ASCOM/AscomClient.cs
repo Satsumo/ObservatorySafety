@@ -18,7 +18,7 @@ namespace ObservatorySafety.Infrastructure.ASCOM
 
     }
 
-    public bool IsConnected => _switch.Connected;
+    public bool IsConnected => _switch?.Connected ?? false;
 
     public void Dispose()
     {
@@ -32,20 +32,20 @@ namespace ObservatorySafety.Infrastructure.ASCOM
 
     public bool GetSwitchValue(short switchID)
     {
-      return _switch.GetSwitch(switchID);
+      return _switch?.GetSwitch(switchID) ?? false;
     }
 
     public void SetSwitchValue(short switchID, bool value)
     {
-      _switch.SetSwitch(switchID, value);
+      _switch?.SetSwitch(switchID, value);
     }
 
     public string GetSwitchName(short switchId)
     {
-      return _switch.GetSwitchName(switchId);
+      return _switch?.GetSwitchName(switchId) ?? string.Empty;
     }
 
-    public short MaxSwitch => _switch.MaxSwitch;
+    public short MaxSwitch => _switch?.MaxSwitch ?? 0;
 
     private Switch GetSwitch()
     {

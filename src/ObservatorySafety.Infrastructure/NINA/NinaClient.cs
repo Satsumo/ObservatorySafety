@@ -29,13 +29,13 @@ public class NinaClient : INinaClient
 
       return JsonSerializer.Deserialize<EquipmentInfoEnvelope>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
     }
-    catch (HttpRequestException) {
-      _logger.LogError("NINA is not responding/running - unable to get equipment info!");
+    catch (HttpRequestException ex) {
+      _logger.LogError("NINA is not responding/running - unable to get equipment info: {Message}", ex.Message);
       return null;
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Unexpected exception getting equipment info!");
+      _logger.LogError(ex, "Unexpected exception getting equipment info: {Message}", ex.Message);
       return null;
     }
   }
@@ -49,7 +49,7 @@ public class NinaClient : INinaClient
     }
     catch (Exception ex)
     {
-      _logger.LogWarning(ex, "Failed to get NINA version - assuming NINA is not running!");
+      _logger.LogWarning(ex, "Failed to get NINA version - assuming NINA is not running: {Message}", ex.Message);
       return false;
     }
   }

@@ -37,7 +37,7 @@ namespace ObservatorySafety.Infrastructure.Alerts
         }
         catch (Exception ex)
         {
-          _logger.LogWarning("Unable to initialise WhatsAppAlertService. Check configuration.  Twilio SID: {Sid}", _options.TwilioSid);
+          _logger.LogWarning(ex, "Unable to initialise WhatsAppAlertService. Check configuration.  Twilio SID: {Sid}", _options.TwilioSid);
         }
       }
     }

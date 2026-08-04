@@ -118,7 +118,7 @@ namespace ObservatorySafety.Watchdog
       }
       catch (Exception ex)
       {
-        Log.Fatal(ex, "Fatal startup exception in ObservatorySafety.Watchdog");
+        Log.Fatal(ex, "Fatal startup exception in ObservatorySafety.Watchdog: {Message}", ex.Message);
         ConsoleLog($"Fatal startup exception: {ex}");
       }
       finally

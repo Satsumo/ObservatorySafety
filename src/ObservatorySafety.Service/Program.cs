@@ -252,7 +252,7 @@ static class Program
     }
     catch (Exception ex)
     {
-      Log.Fatal(ex, "Fatal startup exception in ObservatorySafety.Service");
+      Log.Fatal(ex, "Fatal startup exception in ObservatorySafety.Service: {Message}", ex.Message);
       ConsoleLog($"Fatal startup exception: {ex}");
     }
     finally

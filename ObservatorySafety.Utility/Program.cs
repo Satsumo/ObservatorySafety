@@ -2,21 +2,18 @@
 
 using ObservatorySafety.Infrastructure.ASCOM;
 
-using System;
 using System.CommandLine;
 
 namespace ObservatoryUtility
 {
   public class Program
   {
-    private static ILoggerFactory _loggerFactory;
-
     // Supported calls:
     // ObservatoryService.Utility.exe ascom --name "ASCOM.SkyWatcher.Telescope"
     static int Main(string[] args)
     {
 
-      _loggerFactory = LoggerFactory.Create(builder =>
+      var loggerFactory = LoggerFactory.Create(builder =>
       {
         builder.AddSimpleConsole(options =>
         {
@@ -49,18 +46,19 @@ namespace ObservatoryUtility
       {
         // Retrieve option value using GetValue (correct for 2.0.10)
         var deviceName = parseResult.GetValue(nameOption);
-
-        InspectAscomDevice(deviceName);
+        if (deviceName != null)
+        {
+          InspectAscomDevice(loggerFactory, deviceName);
+        }
       }
-
       return 0;
     }
 
-    static void InspectAscomDevice(string? ascomID)
+    static void InspectAscomDevice(ILoggerFactory loggerFactory, string ascomID)
     {
       Console.WriteLine($"Inspecting ASCOM device: {ascomID}");
 
-      var ascomClientlogger = _loggerFactory.CreateLogger<AscomClient>();
+      var ascomClientlogger = loggerFactory.CreateLogger<AscomClient>();
 
       var ascomClient = new AscomClient(ascomClientlogger, ascomID);
       for (short switchID = 1; switchID < ascomClient.MaxSwitch; switchID++)

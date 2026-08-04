@@ -44,7 +44,7 @@ namespace ObservatorySafety.Infrastructure.Monitor
         }
         catch (Exception ex) 
         {
-          _logger.LogError(ex, "Failed to get Dragonfly value for switch: {switchNumber}", switchNumber);
+          _logger.LogError(ex, "Failed to get Dragonfly value for switch: {switchNumber}: {Message}", switchNumber, ex.Message);
         }
       }
 

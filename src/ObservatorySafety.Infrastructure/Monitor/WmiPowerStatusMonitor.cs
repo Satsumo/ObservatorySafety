@@ -109,7 +109,7 @@ namespace ObservatorySafety.Infrastructure.Monitor
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, "Failed to read UPS power status.");
+        _logger.LogError(ex, "Failed to read UPS power status: {Message}", ex.Message);
         this.Statuses = new Dictionary<StatusType, bool>{
           { StatusType.PowerOn, true }
         };

@@ -140,7 +140,7 @@ namespace ObservatorySafety.Infrastructure.Handler
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, "Failed to send command to relay: {channel}, state: {state}", channel, state);
+        _logger.LogError(ex, "Failed to send command to relay: {channel}, state: {state}: {Message}", channel, state, ex.Message);
       }
     }
   }

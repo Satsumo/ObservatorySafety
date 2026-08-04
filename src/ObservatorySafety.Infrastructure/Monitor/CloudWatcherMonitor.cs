@@ -39,7 +39,7 @@ namespace ObservatorySafety.Infrastructure.Monitor
       }
       catch (Exception ex)
       {
-        _logger.LogWarning(ex, "Failed to get CloudWatcher data, hence assuming it is stale.");
+        _logger.LogWarning(ex, "Failed to get CloudWatcher data, hence assuming it is stale: {Message}", ex.Message);
         this.Statuses = new Dictionary<StatusType, bool>{
           { StatusType.CloudWatcherDataStale, true }
         };

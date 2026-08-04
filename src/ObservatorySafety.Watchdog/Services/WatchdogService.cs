@@ -35,6 +35,10 @@ namespace ObservatorySafety.Watchdog.Services
     private int _serviceErrorBackoffSeconds = 0;
     private int _logErrorBackoffSeconds = 0;
 
+    private readonly Dictionary<string, DateTime> _lastAlertTimes = new();
+    private readonly TimeSpan _alertSuppressionWindow;
+
+
     public WatchdogService(
         ILogger<WatchdogService> logger,
         IConfiguration configuration,
@@ -57,6 +61,9 @@ namespace ObservatorySafety.Watchdog.Services
       _logCheckIntervalSeconds = section.GetValue<int>("LogCheckIntervalSeconds");
 
       _alertStrings = section.GetSection("AlertStrings").Get<string[]>() ?? Array.Empty<string>();
+
+      var alertSuppressionDelay = section.GetValue<int>("AlertSuppressionDelayMinutes");
+      _alertSuppressionWindow = TimeSpan.FromMinutes(alertSuppressionDelay);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -128,7 +135,7 @@ namespace ObservatorySafety.Watchdog.Services
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, "Failed to initialise tail position.");
+        _logger.LogError(ex, "Failed to initialise tail position: {Message}", ex.Message);
         _lastLogPosition = 0;
       }
     }
@@ -149,7 +156,7 @@ namespace ObservatorySafety.Watchdog.Services
         }
         catch (Exception ex)
         {
-          _logger.LogError(ex, "Error in service health loop");
+          _logger.LogError(ex, "Error in service health loop: {Message}", ex.Message);
 
           // Increase backoff (exponential)
           if (_serviceErrorBackoffSeconds == 0)
@@ -188,7 +195,7 @@ namespace ObservatorySafety.Watchdog.Services
         }
         catch (Exception ex)
         {
-          _logger.LogError(ex, "Error in log tail loop");
+          _logger.LogError(ex, "Error in log tail loop: {Message}", ex.Message);
 
           // Increase backoff (exponential)
           if (_logErrorBackoffSeconds == 0)
@@ -263,7 +270,7 @@ namespace ObservatorySafety.Watchdog.Services
               "SafetyService '{ServiceName}' is not running as Windows Service or console process.",
               _serviceName);
 
-          await _alertService.SendAlertAsync(
+          await SendAlertWithSuppression(
               "Observatory SafetyService Not Running",
               $"SafetyService '{_serviceName}' is not running as Windows Service or console process.",
               cancellationToken);
@@ -271,7 +278,7 @@ namespace ObservatorySafety.Watchdog.Services
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, "Error checking service health");
+        _logger.LogError(ex, "Error checking service health: {Message}", ex.Message);
         throw;
       }
     }
@@ -309,11 +316,11 @@ namespace ObservatorySafety.Watchdog.Services
         foreach (var pattern in _alertStrings)
         {
           if (!string.IsNullOrWhiteSpace(pattern) &&
-              line.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0)
+              line.IndexOf(pattern, StringComparison.Ordinal) >= 0)
           {
             _logger.LogWarning("Alert pattern '{Pattern}' detected in log line: {Line}", pattern, line);
 
-            await _alertService.SendAlertAsync(
+            await SendAlertWithSuppression(
                 "Observatory Log Alert",
                 $"Pattern '{pattern}' detected in log: {line}",
                 cancellationToken);
@@ -327,13 +334,28 @@ namespace ObservatorySafety.Watchdog.Services
       {
         _logger.LogWarning("Log inactivity detected. No log updates for {Seconds} seconds.", inactivitySeconds);
 
-        await _alertService.SendAlertAsync(
+        await SendAlertWithSuppression(
             "Observatory Log Inactivity",
             $"No log updates for {inactivitySeconds:F0} seconds. Service may be hung.",
             cancellationToken);
 
         _lastLogActivity = DateTime.UtcNow;
       }
+    }
+
+    private async Task SendAlertWithSuppression(string title, string message, CancellationToken cancellationToken)
+    {
+      var now = DateTime.UtcNow;
+      if (_lastAlertTimes.TryGetValue(message, out var lastAlertTime))
+      {
+        if ((now - lastAlertTime) < _alertSuppressionWindow)
+        {
+          _logger.LogInformation("Alert '{Title}' suppressed due to suppression window.", title);
+          return;
+        }
+      }
+      _lastAlertTimes[message] = now;
+      await _alertService.SendAlertAsync(title, message, cancellationToken);
     }
   }
 }

@@ -61,7 +61,7 @@ namespace ObservatorySafety.Infrastructure.Monitor
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, "Error getting dark dragon status!");
+        _logger.LogError(ex, "Error getting dark dragon status: {Message}", ex.Message);
         return null;
       }
     }

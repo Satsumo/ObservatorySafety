@@ -67,7 +67,7 @@ namespace ObservatorySafety.Watchdog.Infrastructure
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, "Error tailing log file {File}", filePath);
+        _logger.LogError(ex, "Error tailing log file {File}: {Message}", filePath, ex.Message);
         return (new List<string>(), offset);
       }
     }

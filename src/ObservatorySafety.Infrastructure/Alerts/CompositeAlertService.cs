@@ -29,7 +29,7 @@ namespace ObservatorySafety.Infrastructure.Alerts
         }
         catch (Exception ex)
         {
-          _logger.LogError(ex, "Error sending alert via {ChannelName}", channel.Key);
+          _logger.LogError(ex, "Error sending alert via {ChannelName}: {Message}", channel.Key, ex.Message);
         }
       }
     }
