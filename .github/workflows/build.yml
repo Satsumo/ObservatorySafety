@@ -56,6 +56,7 @@ jobs:
       run: |
         dotnet restore src/ObservatorySafety.Service/ObservatorySafety.Service.csproj
         dotnet restore src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj
+        dotnet restore src/ObservatorySafety.Utility/ObservatorySafety.Utility.csproj
 
     - name: Build Service
       shell: pwsh
@@ -70,6 +71,15 @@ jobs:
       shell: pwsh
       run: |
         dotnet build src/ObservatorySafety.Watchdog/ObservatorySafety.Watchdog.csproj `
+          --configuration Release `
+          /p:Version=$env:MSI_VERSION `
+          /p:FileVersion=$env:MSI_VERSION `
+          /p:AssemblyVersion=$env:MSI_VERSION
+
+    - name: Build Utility
+      shell: pwsh
+      run: |
+        dotnet build src/ObservatorySafety.Utility/ObservatorySafety.Utility.csproj `
           --configuration Release `
           /p:Version=$env:MSI_VERSION `
           /p:FileVersion=$env:MSI_VERSION `
@@ -100,6 +110,19 @@ jobs:
           /p:AssemblyVersion=$env:MSI_VERSION `
           /p:PublishSingleFile=false `
           --output src/ObservatorySafety.Watchdog/publish-msi
+
+    - name: Publish Utility into Service payload
+      shell: pwsh
+      run: |
+        dotnet publish src/ObservatorySafety.Utility/ObservatorySafety.Utility.csproj `
+          --configuration Release `
+          --runtime win-x64 `
+          --self-contained true `
+          /p:Version=$env:MSI_VERSION `
+          /p:FileVersion=$env:MSI_VERSION `
+          /p:AssemblyVersion=$env:MSI_VERSION `
+          /p:PublishSingleFile=false `
+          --output src/ObservatorySafety.Service/publish-msi
 
     - name: Generate version files
       shell: pwsh
@@ -137,6 +160,14 @@ jobs:
           /tr http://timestamp.digicert.com `
           /td sha256 `
           /fd sha256 `
+          src/ObservatorySafety.Service/publish-msi/ObservatorySafety.Utility.exe
+
+        & $signtool.FullName sign `
+          /f cert.pfx `
+          /p $env:SIGNING_CERT_PASSWORD `
+          /tr http://timestamp.digicert.com `
+          /td sha256 `
+          /fd sha256 `
           src/ObservatorySafety.Watchdog/publish-msi/ObservatorySafety.Watchdog.exe
       env:
         SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
@@ -150,6 +181,7 @@ jobs:
         $watchdogPath = "src/ObservatorySafety.Watchdog/publish-msi"
 
         $serviceExe = "$servicePath/ObservatorySafety.Service.exe"
+        $utilityExe = "$servicePath/ObservatorySafety.Utility.exe"
         $watchdogExe = "$watchdogPath/ObservatorySafety.Watchdog.exe"
 
         $servicePayload = "$servicePath/payload"
@@ -159,7 +191,7 @@ jobs:
         New-Item -ItemType Directory -Path $watchdogPayload -Force | Out-Null
 
         Get-ChildItem $servicePath -File |
-          Where-Object { $_.Name -ne "ObservatorySafety.Service.exe" -and $_.Name -ne "appsettings.json" -and $_.Name -ne "appsettings.version" } |
+          Where-Object { $_.Name -ne "ObservatorySafety.Service.exe" -and $_.Name -ne "ObservatorySafety.Utility.exe" -and $_.Name -ne "appsettings.json" -and $_.Name -ne "appsettings.version" } |
           ForEach-Object { Move-Item $_.FullName $servicePayload -Force }
 
         Get-ChildItem $watchdogPath -File |
@@ -177,6 +209,7 @@ jobs:
 
         candle `
           -dServiceExePath="$serviceExe" `
+          -dUtilityExePath="$utilityExe" `
           -dServiceConfigPath="$servicePath/appsettings.json" `
           -dServiceVersionPath="$servicePath/appsettings.version" `
           wix/Product.Service.wxs wix/generated/ServiceComponents.wxs `

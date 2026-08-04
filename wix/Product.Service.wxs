@@ -9,54 +9,42 @@
       Manufacturer="Satsumo"
       UpgradeCode="A3F9C1E2-6B4D-4F8A-9C2E-1D7B3A9F4C21">
 
-    <Package
-      InstallerVersion="500"
-      Compressed="yes"
-      InstallScope="perMachine" />
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perMachine" />
 
     <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
 
     <!-- Directory structure -->
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <!-- Program Files -->
+
       <Directory Id="ProgramFilesFolder">
         <Directory Id="INSTALLDIR" Name="ObservatorySafety.Service" />
       </Directory>
 
-      <!-- Start Menu hierarchy -->
+      <!-- Start Menu -->
       <Directory Id="ProgramMenuFolder" Name="Programs">
         <Directory Id="ApplicationProgramsFolder" Name="ObservatorySafety" />
       </Directory>
+
     </Directory>
 
     <!-- Main Service Feature -->
-    <Feature Id="MainFeature"
-             Title="ObservatorySafety Service"
-             Level="1"
-             Absent="disallow">
-      <!-- Harvested payload components -->
+    <Feature Id="MainFeature" Title="ObservatorySafety Service" Level="1">
       <ComponentGroupRef Id="ServiceComponents" />
-
-      <!-- Service EXE + Windows Service -->
       <ComponentRef Id="ServiceInstaller" />
-
-      <!-- Config component (versioned + JSON) -->
       <ComponentRef Id="ServiceConfigComponent" />
+      <ComponentRef Id="UtilityExeComponent" />
     </Feature>
 
-    <!-- Utility Feature (separate, optional) -->
-    <Feature Id="UtilityFeature"
-             Title="ObservatorySafety Utility"
-             Level="1">
-      <ComponentRef Id="UtilityExeComponent" />
+    <!-- Utility Feature -->
+    <Feature Id="UtilityFeature" Title="ObservatorySafety Utility" Level="1">
       <ComponentRef Id="UtilityShortcutComponent" />
     </Feature>
 
-    <!-- Windows Service installation -->
-    <Component Id="ServiceInstaller"
-               Directory="INSTALLDIR">
+    <!-- Windows Service -->
+    <Component Id="ServiceInstaller" Directory="INSTALLDIR">
 
-      <!-- Main EXE -->
       <File Id="ServiceExe"
             Source="$(var.ServiceExePath)"
             KeyPath="yes" />
@@ -79,56 +67,46 @@
           Remove="uninstall"
           Wait="yes" />
 
-      <RegistryValue
-          Root="HKLM"
-          Key="SYSTEM\CurrentControlSet\Services\ObservatorySafety.Service"
-          Name="Environment"
-          Type="multiString"
-          Value="OBSERVATORY_ENVIRONMENT=Production"
-          Action="write" />
     </Component>
 
-    <!-- Overwrite-safe config component -->
+    <!-- Config -->
     <Component Id="ServiceConfigComponent"
                Guid="643739ef-3d89-4499-bc46-1c559da260d5"
                Directory="INSTALLDIR">
 
-      <!-- Versioned KeyPath -->
       <File Id="ServiceConfigVersion"
             Source="$(var.ServiceVersionPath)"
             Name="appsettings.version"
             KeyPath="yes" />
 
-      <!-- Delete old JSON on install -->
       <RemoveFile Id="RemoveOldServiceConfig"
                   Name="appsettings.json"
                   On="install"
                   Directory="INSTALLDIR" />
 
-      <!-- New JSON config file -->
       <File Id="ServiceConfig"
             Source="$(var.ServiceConfigPath)"
             Name="appsettings.json"
             KeyPath="no" />
+
     </Component>
 
-    <!-- Utility EXE in service install directory -->
-    <Component Id="UtilityExeComponent"
-               Directory="INSTALLDIR">
+    <!-- Utility EXE -->
+    <Component Id="UtilityExeComponent" Directory="INSTALLDIR">
       <File Id="UtilityExe"
             Source="$(var.UtilityExePath)"
             Name="ObservatorySafety.Utility.exe"
             KeyPath="yes" />
     </Component>
 
-    <!-- Utility Start Menu shortcut + marker registry -->
-    <Component Id="UtilityShortcutComponent"
-               Directory="ApplicationProgramsFolder">
+    <!-- Utility Shortcut -->
+    <Component Id="UtilityShortcutComponent" Directory="ApplicationProgramsFolder">
       <Shortcut Id="UtilityShortcut"
                 Name="ObservatorySafety Utility"
                 Description="ASCOM and ObservatorySafety diagnostic utility"
                 Target="[INSTALLDIR]ObservatorySafety.Utility.exe"
                 WorkingDirectory="INSTALLDIR" />
+
       <RegistryValue Root="HKCU"
                      Key="Software\Satsumo\ObservatorySafety"
                      Name="UtilityShortcutInstalled"
