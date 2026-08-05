@@ -79,9 +79,9 @@ namespace ObservatoryUtility
       var ascomClient = new AscomClient(ascomClientlogger, ascomID);
       var maxSwitch = ascomClient.MaxSwitch;
 
-      Console.WriteLine("ASCOM device has {maxSwitch} switches.");
+      Console.WriteLine($"ASCOM device has {maxSwitch} max switches.");
 
-      for (short switchID = 1; switchID < maxSwitch; switchID++)
+      for (short switchID = 1; switchID < maxSwitch+1; switchID++)
       {
         var switchName = ascomClient.GetSwitchName(switchID);
         var switchValue = ascomClient.GetSwitchValue(switchID);
