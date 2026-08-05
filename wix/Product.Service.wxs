@@ -54,7 +54,7 @@
           Name="ObservatorySafety.Service"
           DisplayName="Observatory Safety Service"
           Description="Monitors observatory safety conditions."
-          Start="manual"
+          Start="demand"
           Type="ownProcess"
           ErrorControl="normal"
           Vital="yes"

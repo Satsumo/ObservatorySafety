@@ -43,7 +43,7 @@
           Name="ObservatorySafety.Watchdog"
           DisplayName="Observatory Safety Watchdog"
           Description="Monitors the ObservatorySafety Service."
-          Start="manual"
+          Start="demand"
           Type="ownProcess"
           ErrorControl="normal"
           Vital="yes"
