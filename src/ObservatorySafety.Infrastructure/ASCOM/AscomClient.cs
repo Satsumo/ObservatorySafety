@@ -45,7 +45,21 @@ namespace ObservatorySafety.Infrastructure.ASCOM
       return this.GetAscomSwitch()?.GetSwitchName(switchId) ?? string.Empty;
     }
 
-    public short MaxSwitch => this.GetAscomSwitch()?.MaxSwitch ?? 0;
+    public short MaxSwitch
+    {
+      get 
+      {
+        try
+        {
+          return this.GetAscomSwitch()?.MaxSwitch ?? 0;
+        }
+        catch (Exception ex)
+        {
+          _logger.LogWarning(ex, "ASCOM device with ProgID: {ProgId} does not implement MaxSwitch property.", _progId);
+          return 1;
+        }
+      }
+    }
 
     private Switch? GetAscomSwitch()
     {
