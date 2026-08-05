@@ -32,29 +32,37 @@ namespace ObservatorySafety.Infrastructure.ASCOM
 
     public bool GetSwitchValue(short switchID)
     {
-      return _switch?.GetSwitch(switchID) ?? false;
+      return this.GetAscomSwitch()?.GetSwitch(switchID) ?? false;
     }
 
     public void SetSwitchValue(short switchID, bool value)
     {
-      _switch?.SetSwitch(switchID, value);
+      this.GetAscomSwitch()?.SetSwitch(switchID, value);
     }
 
     public string GetSwitchName(short switchId)
     {
-      return _switch?.GetSwitchName(switchId) ?? string.Empty;
+      return this.GetAscomSwitch()?.GetSwitchName(switchId) ?? string.Empty;
     }
 
-    public short MaxSwitch => _switch?.MaxSwitch ?? 0;
+    public short MaxSwitch => this.GetAscomSwitch()?.MaxSwitch ?? 0;
 
-    private Switch GetSwitch()
+    private Switch? GetAscomSwitch()
     {
       if (_switch == null)
       {
-        _switch = new Switch(_progId)
+        try
         {
-          Connected = true
-        };
+          _switch = new Switch(_progId)
+          {
+            Connected = true
+          };
+        }
+        catch (Exception ex)
+        {
+          _logger.LogError(ex, "Failed to connect to ASCOM device with ProgID: {ProgId}", _progId);
+          return null;
+        }
       }
       return _switch;
     }
