@@ -27,7 +27,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObservatorySafety.Watchdog"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObservatorySafety.Watchdog.Tests", "tests\ObservatorySafety.Watchdog.Tests\ObservatorySafety.Watchdog.Tests.csproj", "{3473A681-7484-4A48-830D-15256F1E44D3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObservatorSafety.NINA", "src\ObservatorSafety.NINA\ObservatorSafety.NINA.csproj", "{497A6561-B03F-42F1-AA92-4370C24A7018}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObservatorySafety.NINA", "src\ObservatorySafety.NINA\ObservatorySafety.NINA.csproj", "{497A6561-B03F-42F1-AA92-4370C24A7018}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObservatorySafety.Utility", "src\ObservatorySafety.Utility\ObservatorySafety.Utility.csproj", "{07101857-048C-4231-854C-3D0B640988A4}"
 EndProject

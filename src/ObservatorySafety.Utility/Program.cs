@@ -30,7 +30,10 @@ namespace ObservatoryUtility
       var ascomCommand = new Command("ascom", "Inspect an ASCOM device");
 
       // --name option
-      var nameOption = new Option<string>("--name", "The ASCOM device name");
+      var nameOption = new Option<string>("--name")
+      {
+        Description = "The ASCOM device name"
+      };
 
       // Add option to the command
       ascomCommand.Options.Add(nameOption);
@@ -50,6 +53,10 @@ namespace ObservatoryUtility
         {
           InspectAscomDevice(loggerFactory, deviceName);
         }
+      }
+      else
+      {
+        Console.WriteLine("No valid command provided. Use --help for usage information.");
       }
       return 0;
     }

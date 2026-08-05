@@ -2,9 +2,8 @@
 using Microsoft.Extensions.Options;
 
 using ObservatorySafety.Core.Status;
-using ObservatorySafety.NINA;
 
-namespace ObservatorSafety.NINA
+namespace ObservatorySafety.NINA
 {
   public class NinaMonitor : StatusMonitorBase
   {

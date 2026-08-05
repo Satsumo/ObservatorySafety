@@ -1,7 +1,5 @@
 using Microsoft.Extensions.Options;
 
-using ObservatorSafety.NINA;
-
 using ObservatorySafety.Core;
 using ObservatorySafety.Core.Abstractions;
 
