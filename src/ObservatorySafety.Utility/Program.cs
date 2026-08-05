@@ -81,7 +81,7 @@ namespace ObservatoryUtility
 
       Console.WriteLine($"ASCOM device has {maxSwitch} max switches.");
 
-      for (short switchID = 1; switchID < maxSwitch+1; switchID++)
+      for (short switchID = 0; switchID < maxSwitch; switchID++)
       {
         var switchName = ascomClient.GetSwitchName(switchID);
         var switchValue = ascomClient.GetSwitchValue(switchID);
