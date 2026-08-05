@@ -53,10 +53,9 @@ namespace ObservatorySafety.Infrastructure.ASCOM
         {
           return this.GetAscomSwitch()?.MaxSwitch ?? 0;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-          _logger.LogWarning(ex, "ASCOM device with ProgID: {ProgId} does not implement MaxSwitch property.", _progId);
-          return 1;
+          return 0;
         }
       }
     }

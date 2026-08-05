@@ -76,6 +76,16 @@ You can run the watchdog service in a console rather than as (the installed) ser
 ObservatorySafety.Watchdog.exe --console
 
 
+*****************************
+*           		            *
+* ObservatorySafety.Utility *
+*                           *
+*****************************
+This utility is a console application that can assist with setting up your appsettings.PRODUCTION.json file.  
+Currently it supports the ability to query an ASCOM target for its switch names and to set the value of a switch on an ASCOM target.  This is useful for setting up 
+the Shutdown handler in the safety service because you need to know the ASCOM ProgID of the device and the switch names for each switch you want to control for shutdown.
+This utility is installed as part of the ObservatorySafety.Service installation, but it is not a service itself.  You can run it from a console window.
+
 ****************
 *              *
 * INSTALLATION *

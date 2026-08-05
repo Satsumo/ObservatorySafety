@@ -86,25 +86,29 @@ namespace ObservatoryUtility
             return;
           }
 
-          // -----------------------------------------------------
-          // SET SWITCH VALUE
-          // -----------------------------------------------------
-          if (value != null)
+          if (switchIndex != null || switchName != null)
           {
-            if (value != 0 && value != 1)
+            // -----------------------------------------------------
+            // SET SWITCH VALUE
+            // -----------------------------------------------------
+            if (value != null)
             {
-              Console.WriteLine("ERROR: --value must be 0 or 1.");
+              if (value != 0 && value != 1)
+              {
+                Console.WriteLine("ERROR: --value must be 0 or 1.");
+                return;
+              }
+                            
+              SetAscomSwitch(loggerFactory, deviceName, switchIndex, switchName, value.Value);
               return;
             }
-
-            if (switchIndex == null && switchName == null)
+            // -----------------------------------------------------
+            // GET SWITCH VALUE
+            // -----------------------------------------------------
+            else
             {
-              Console.WriteLine("ERROR: You must specify either --switch <index> or --switch-name <name>.");
-              return;
+              GetAscomSwitchValue(loggerFactory, deviceName, switchIndex, switchName);
             }
-
-            SetAscomSwitch(loggerFactory, deviceName, switchIndex, switchName, value.Value);
-            return;
           }
 
           // -----------------------------------------------------
@@ -136,6 +140,14 @@ namespace ObservatoryUtility
       var ascomClient = new AscomClient(ascomClientLogger, ascomID);
 
       var maxSwitch = ascomClient.MaxSwitch;
+      if (maxSwitch == 0)
+      {
+        Console.WriteLine($"ASCOM device has no MaxSwitch, hence just going to assume it has one switch with no name - so getting value for switch 0 instead.");
+        var swicthValue = ascomClient.GetSwitchValue(0);
+        Console.WriteLine($"Switch 0 value is {swicthValue}");
+        return;
+      }
+
       Console.WriteLine($"ASCOM device has {maxSwitch} max switches.");
 
       for (short switchID = 0; switchID < maxSwitch; switchID++)
@@ -170,7 +182,7 @@ namespace ObservatoryUtility
       else if (switchName != null)
       {
         var maxSwitch = ascomClient.MaxSwitch;
-
+        
         for (short i = 0; i < maxSwitch; i++)
         {
           if (string.Equals(ascomClient.GetSwitchName(i), switchName, StringComparison.OrdinalIgnoreCase))
@@ -189,6 +201,58 @@ namespace ObservatoryUtility
 
       ascomClient.SetSwitchValue(index, value == 1);
       Console.WriteLine($"Switch {index} set to {value}.");
+    }
+
+    // ---------------------------------------------------------
+    // GET SWITCH VALUE
+    // ---------------------------------------------------------
+    static void GetAscomSwitchValue(
+      ILoggerFactory loggerFactory,
+      string ascomID,
+      int? switchIndex,
+      string? switchName)
+    {
+      Console.WriteLine($"Getting ASCOM switch value on {ascomID}...");
+
+      var ascomClientLogger = loggerFactory.CreateLogger<AscomClient>();
+      var ascomClient = new AscomClient(ascomClientLogger, ascomID);
+
+      short index = -1;
+
+      if (switchIndex != null)
+      {
+        index = (short) switchIndex.Value;
+      }
+      else if (switchName != null)
+      {
+        var maxSwitch = ascomClient.MaxSwitch;
+
+        if (maxSwitch == 0)
+        {
+          Console.WriteLine($"ASCOM device has no MaxSwitch, hence just going to assume it has one switch with no name - so getting value for switch 0 instead.");
+          var swicthValue = ascomClient.GetSwitchValue(0);
+          Console.WriteLine($"Switch 0 value is {swicthValue}");
+          return;
+        }
+
+        for (short i = 0; i < maxSwitch; i++)
+        {
+          if (string.Equals(ascomClient.GetSwitchName(i), switchName, StringComparison.OrdinalIgnoreCase))
+          {
+            index = i;
+            break;
+          }
+        }
+
+        if (index < 0)
+        {
+          Console.WriteLine($"ERROR: Switch name '{switchName}' not found.");
+          return;
+        }
+      }
+
+      var switchValue = ascomClient.GetSwitchValue(index);
+      Console.WriteLine($"Switch {index} value is {switchValue}.");
     }
 
     static void ShowHelp()
@@ -210,8 +274,8 @@ namespace ObservatoryUtility
       Console.WriteLine();
       Console.WriteLine("Options:");
       Console.WriteLine("  --name <ProgID>         Required. ASCOM device ProgID.");
-      Console.WriteLine("  --switch <index>        Optional. Switch index to set.");
-      Console.WriteLine("  --switch-name <name>    Optional. Switch name to set.");
+      Console.WriteLine("  --switch <index>        Optional. Switch index to get/set.");
+      Console.WriteLine("  --switch-name <name>    Optional. Switch name to get/set.");
       Console.WriteLine("  --value <0|1>           Optional. Value to set (0 or 1).");
       Console.WriteLine();
       Console.WriteLine("Examples:");
