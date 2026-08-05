@@ -10,7 +10,7 @@ namespace ObservatoryUtility
   {
     // Supported calls:
     // ObservatoryService.Utility.exe ascom --name "ASCOM.SkyWatcher.Telescope"
-    static int Main(string[] args)
+    static async Task Main(string[] args)
     {
 
       var loggerFactory = LoggerFactory.Create(builder =>
@@ -44,21 +44,30 @@ namespace ObservatoryUtility
       // Parse args
       var parseResult = root.Parse(args);
 
-      // Check if "ascom" was invoked
-      if (parseResult.CommandResult.Command == ascomCommand)
+      try
       {
-        // Retrieve option value using GetValue (correct for 2.0.10)
-        var deviceName = parseResult.GetValue(nameOption);
-        if (deviceName != null)
+        // Check if "ascom" was invoked
+        if (parseResult.CommandResult.Command == ascomCommand)
         {
-          InspectAscomDevice(loggerFactory, deviceName);
+          // Retrieve option value using GetValue (correct for 2.0.10)
+          var deviceName = parseResult.GetValue(nameOption);
+          if (deviceName != null)
+          {
+            InspectAscomDevice(loggerFactory, deviceName);
+          }
+        }
+        else
+        {
+          Console.WriteLine("No valid command provided. Use --help for usage information.");
         }
       }
-      else
+      finally
       {
-        Console.WriteLine("No valid command provided. Use --help for usage information.");
+        // Give the logger a chance to flush before exiting
+        await Task.Delay(1000);
+
+        loggerFactory.Dispose();
       }
-      return 0;
     }
 
     static void InspectAscomDevice(ILoggerFactory loggerFactory, string ascomID)
@@ -68,7 +77,11 @@ namespace ObservatoryUtility
       var ascomClientlogger = loggerFactory.CreateLogger<AscomClient>();
 
       var ascomClient = new AscomClient(ascomClientlogger, ascomID);
-      for (short switchID = 1; switchID < ascomClient.MaxSwitch; switchID++)
+      var maxSwitch = ascomClient.MaxSwitch;
+
+      Console.WriteLine("ASCOM device has {maxSwitch} switches.");
+
+      for (short switchID = 1; switchID < maxSwitch; switchID++)
       {
         var switchName = ascomClient.GetSwitchName(switchID);
         var switchValue = ascomClient.GetSwitchValue(switchID);
