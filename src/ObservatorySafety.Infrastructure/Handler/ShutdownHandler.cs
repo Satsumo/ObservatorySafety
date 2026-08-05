@@ -140,6 +140,12 @@ namespace ObservatorySafety.Infrastructure.Handler
 
     private void ShutdownObservatory()
     {
+      if (!_options.Enabled)
+      {
+        _logger.LogWarning("Shutdown threshold reached but shutdown is disabled in configuration, hence do nothing.");
+        return;
+      }
+
       _logger.LogWarning("Shutdown threshold reached — closing observatory.");
       foreach (var ascomHandler in _options.AscomHandlers)
       {

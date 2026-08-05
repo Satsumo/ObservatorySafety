@@ -5,6 +5,8 @@ namespace ObservatorySafety.Infrastructure.Options
 {
   public class ShutdownOptions
   {
+    public bool Enabled { get; set; } = true;
+
     // Shutdown will happen this many minutes after trigger criteria is met (assuming criteria is still being met)
     public int ShutdownThresholdMinutes { get; set; } = 10;
 

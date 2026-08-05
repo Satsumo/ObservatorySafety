@@ -33,8 +33,8 @@ My monitor setup consists of the following:
 - Observatory PC - this is the PC that connects to all my hardware and runs NINA.  The PC itself doesn't matter; what matters is 
 	whether NINA is running or not.  In my setup it should always be running (it's setup to auto start on PC restart).  I therefore
 	have a NINA monitor.  It tells me whether NINA is running and whether a Sequence is currently running in NINA.  
-	Sequence monitoring is important because all my sequences are designed to close the roof if weather is not safe. This means I can
-	(mostly) ignore unsafe status if a Sequence is running because I know it should close the roof.
+	Sequence monitoring isn't particularly important for me, because I have NINA Dome settings such that NINA closes the roof if the 
+	weather is not safe, but if you did not then you'd be relying on the Sequence steps to do it.
 
 That is my monitoring in a nutshell.  The next part is the Handlers.
 - Notification - this handler sends me alerts if certain status values are encountered. Currently the code supports, WhatsApp (via 
@@ -89,8 +89,9 @@ Ensure environment variable is set as DOTNET_ENVIRONMENT=PRODUCTION for the serv
 You must update the "MainServiceLogDirectory" property in you Watchdog service's json file to point to the same log directory as the ObservatorySafety.Service 
 service, otherwise the Watchdog service will not be able to find the log files for the main service and will not be able to send alerts.
 
-Note that installation does NOT restart the service (because we want to give you a chance to modify your appsettings).  Reboot of the PC will restart the services (or
-you can manually do it from the Services app).
+Note that installation does NOT restart the service (because we want to give you a chance to modify your appsettings).  The services are set to "manual" start, so
+you will need to go to them in the Services app and start them manually once your observatory is ready.  It's like this by design, otherwise I was getting lots of
+alerts when I bounced the PC because the observatory was not ready yet.  I wanted to be able to start the services when I was ready, not when the PC was ready.
 
 *********************
 *                   *
