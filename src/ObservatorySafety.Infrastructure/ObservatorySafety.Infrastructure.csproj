@@ -23,6 +23,10 @@
       <HintPath>..\..\lib\ASCOM.DriverAccess.dll</HintPath>
       <Private>true</Private>
     </Reference>
+
+    <Reference Include="ASCOM.Utilities">
+      <HintPath>..\..\lib\ASCOM.Utilities.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <PropertyGroup>
